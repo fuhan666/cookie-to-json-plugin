@@ -1,0 +1,18 @@
+{
+  "main": "index.html",
+  "logo": "logo.png",
+  "development": {
+    "main": "http://localhost:5173"
+  },
+  "features": [
+    {
+      "code": "cookie2json",
+      "explain": "Cookie字符串转JSON格式",
+      "cmds": [
+        "cookie转json",
+        "cookie2json",
+        "Cookie转JSON"
+      ]
+    }
+  ]
+}
