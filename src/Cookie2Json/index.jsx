@@ -45,8 +45,16 @@ export default function Cookie2Json({ enterAction }) {
       if (!trimmedCookie) return; // 跳过空字符串
 
       // 分割键和值（处理值中包含等号的情况）
-      let [key, value] = trimmedCookie.split("=", 2);
-      if (value === undefined) value = "";
+      const equalIndex = trimmedCookie.indexOf("=");
+      let key, value;
+
+      if (equalIndex === -1) {
+        key = trimmedCookie;
+        value = "";
+      } else {
+        key = trimmedCookie.slice(0, equalIndex);
+        value = trimmedCookie.slice(equalIndex + 1);
+      }
 
       // 解码并存储到对象
       try {
