@@ -1,4 +1,11 @@
 import { useState, useEffect } from "react";
+import ConvertPage from "./components/ConvertPage";
+import HistoryPage from "./components/HistoryPage";
+import {
+  convertCookieToJson,
+  extractCookieFromCurl,
+  highlightJson,
+} from "./utils/cookieUtils";
 import "./style.css";
 
 export default function Cookie2Json({ enterAction }) {
@@ -6,7 +13,25 @@ export default function Cookie2Json({ enterAction }) {
   const [jsonResult, setJsonResult] = useState("");
   const [highlightedJson, setHighlightedJson] = useState("");
   const [theme, setTheme] = useState("light");
-  const [showToast, setShowToast] = useState(false);
+  const [showToast, setShowToast] = useState("");
+  const [activeTab, setActiveTab] = useState("convert"); // 'convert' or 'history'
+  const [history, setHistory] = useState([]);
+  const [lastInputContent, setLastInputContent] = useState(""); // 添加新的状态来保存最后的输入内容
+  const [selectedItems, setSelectedItems] = useState(new Set()); // 添加选中项的状态
+
+  // 初始化时从数据库加载历史记录
+  useEffect(() => {
+    const allDocs = window.utools.db.allDocs("cookie2json/") || [];
+    const historyData = allDocs
+      .map((doc) => ({
+        id: doc._id.replace("cookie2json/", ""),
+        content: doc.data.content,
+        timestamp: doc.data.timestamp,
+      }))
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 1000); // 只保留最近1000条记录
+    setHistory(historyData);
+  }, []);
 
   // 监听系统主题变化
   useEffect(() => {
@@ -34,94 +59,69 @@ export default function Cookie2Json({ enterAction }) {
     };
   }, []);
 
-  function convertCookieToJson(cookieString) {
-    if (!cookieString) return {};
-    const obj = {};
-    // 分割每个Cookie键值对
-    const cookies = cookieString.split(";");
+  // 显示Toast消息
+  const showToastMessage = (message) => {
+    setShowToast(message);
+    setTimeout(() => setShowToast(""), 2000);
+  };
 
-    cookies.forEach((cookie) => {
-      const trimmedCookie = cookie.trim();
-      if (!trimmedCookie) return; // 跳过空字符串
+  // 保存到历史记录
+  const saveToHistory = () => {
+    if (!cookieString) return;
 
-      // 分割键和值（处理值中包含等号的情况）
-      const equalIndex = trimmedCookie.indexOf("=");
-      let key, value;
+    const timestamp = Date.now();
+    const docId = `cookie2json/${timestamp}`;
+    const doc = {
+      _id: docId,
+      data: {
+        content: cookieString,
+        timestamp: timestamp,
+      },
+    };
 
-      if (equalIndex === -1) {
-        key = trimmedCookie;
-        value = "";
-      } else {
-        key = trimmedCookie.slice(0, equalIndex);
-        value = trimmedCookie.slice(equalIndex + 1);
+    const result = window.utools.db.put(doc);
+    if (result.ok) {
+      const newHistory = [
+        {
+          id: timestamp,
+          content: cookieString,
+          timestamp: timestamp,
+        },
+        ...history,
+      ].slice(0, 1000); // 只保留最近1000条记录
+
+      // 如果历史记录超过1000条，删除多余的记录
+      if (history.length >= 1000) {
+        const oldDocs = window.utools.db
+          .allDocs("cookie2json/")
+          .sort((a, b) => b.data.timestamp - a.data.timestamp)
+          .slice(1000);
+        oldDocs.forEach((doc) => {
+          window.utools.db.remove(doc._id);
+        });
       }
 
-      // 解码并存储到对象
-      try {
-        obj[key.trim()] = decodeURIComponent(value);
-      } catch (e) {
-        obj[key.trim()] = value; // 解码失败则保留原值
-      }
-    });
-
-    return obj;
-  }
-
-  // 高亮JSON语法
-  function highlightJson(json) {
-    if (!json) return "";
-
-    // 处理错误信息
-    if (json.startsWith("转换出错")) {
-      return `<span class="json-error">${json}</span>`;
+      setHistory(newHistory);
+      showToastMessage("已保存到历史记录");
+    } else {
+      showToastMessage("保存失败：" + (result.message || "未知错误"));
     }
+  };
 
-    // 替换JSON的不同部分
-    return (
-      json
-        // 替换键和冒号
-        .replace(
-          /"([^"]+)":/g,
-          '<span class="json-key">"$1"</span><span class="json-colon">:</span>'
-        )
-        // 替换字符串值
-        .replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>')
-        // 替换数字值
-        .replace(
-          /: ([0-9]+)([,}\n])/g,
-          ': <span class="json-number">$1</span>$2'
-        )
-        // 替换布尔值和null
-        .replace(
-          /: (true|false|null)([,}\n])/g,
-          ': <span class="json-boolean">$1</span>$2'
-        )
-        // 替换括号
-        .replace(/[{]/g, '<span class="json-bracket">{</span>')
-        .replace(/[}]/g, '<span class="json-bracket">}</span>')
-        .replace(/\[/g, '<span class="json-bracket">[</span>')
-        .replace(/\]/g, '<span class="json-bracket">]</span>')
-    );
-  }
-
-  function extractCookieFromCurl(value) {
-    if (value.startsWith("curl --location")) {
-      const match = value.match(/--header 'Cookie: (.+?)'/g);
-      if (match) {
-        return match[0].replace(/--header 'Cookie: (.+?)'/g, "$1");
-      }
-    }
-    return value;
-  }
+  // 从历史记录中加载
+  const loadFromHistory = (item) => {
+    setActiveTab("convert");
+    setLastInputContent(item.content);
+    handleInputChange({ target: { innerText: item.content } });
+  };
 
   // 处理输入框内容变化
   const handleInputChange = (e) => {
-    const value = e.target.value;
+    const value = e.target?.innerText || "";
     setCookieString(value);
+    setLastInputContent(value); // 保存最后的输入内容
     try {
-      let cookieStr = value;
-      cookieStr = extractCookieFromCurl(value);
-
+      let cookieStr = extractCookieFromCurl(value);
       const result = convertCookieToJson(cookieStr);
       const formattedJson = JSON.stringify(result, null, 2);
       setJsonResult(formattedJson);
@@ -133,59 +133,56 @@ export default function Cookie2Json({ enterAction }) {
     }
   };
 
-  // 复制JSON到剪贴板
-  const copyToClipboard = () => {
-    if (!jsonResult) return;
-    window.utools.copyText(jsonResult);
-    // 显示自定义Toast提示
-    setShowToast(true);
-    setTimeout(() => {
-      setShowToast(false);
-    }, 2000);
-  };
-
-  // 清除输入内容
-  const clearInput = () => {
-    setCookieString("");
-    setJsonResult("");
-    setHighlightedJson("");
-  };
-
   return (
-    <div className={`cookie2json-container ${theme}`}>
-      {showToast && <div className="toast-message">复制成功</div>}
-      <div className="input-container">
-        <textarea
-          className="cookie-input"
-          placeholder="请输入Cookie字符串，例如：name=value; name2=value2"
-          value={cookieString}
-          onChange={handleInputChange}
+    <div className="cookie2json-container">
+      {showToast && <div className="toast-message">{showToast}</div>}
+
+      <div className="tab-container">
+        <div
+          className={`tab-item ${activeTab === "convert" ? "active" : ""}`}
+          onClick={() => {
+            if (activeTab !== "convert") {
+              setActiveTab("convert");
+              setSelectedItems(new Set()); // 清空选中状态
+            }
+          }}
+        >
+          转JSON
+        </div>
+        <div
+          className={`tab-item ${activeTab === "history" ? "active" : ""}`}
+          onClick={() => {
+            setActiveTab("history");
+          }}
+        >
+          历史记录
+        </div>
+      </div>
+
+      {activeTab === "convert" ? (
+        <ConvertPage
+          cookieString={cookieString}
+          setCookieString={setCookieString}
+          jsonResult={jsonResult}
+          setJsonResult={setJsonResult}
+          highlightedJson={highlightedJson}
+          setHighlightedJson={setHighlightedJson}
+          lastInputContent={lastInputContent}
+          setLastInputContent={setLastInputContent}
+          showToastMessage={showToastMessage}
+          handleInputChange={handleInputChange}
+          saveToHistory={saveToHistory}
         />
-        <div className="button-container">
-          <button
-            className="clear-button"
-            onClick={clearInput}
-            disabled={!cookieString}
-          >
-            清空
-          </button>
-        </div>
-      </div>
-      <div className="output-container">
-        <pre
-          className="json-output"
-          dangerouslySetInnerHTML={{ __html: highlightedJson }}
-        ></pre>
-        <div className="button-container">
-          <button
-            className="copy-button"
-            onClick={copyToClipboard}
-            disabled={!jsonResult}
-          >
-            复制
-          </button>
-        </div>
-      </div>
+      ) : (
+        <HistoryPage
+          history={history}
+          setHistory={setHistory}
+          selectedItems={selectedItems}
+          setSelectedItems={setSelectedItems}
+          loadFromHistory={loadFromHistory}
+          showToastMessage={showToastMessage}
+        />
+      )}
     </div>
   );
 }
