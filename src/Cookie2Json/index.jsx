@@ -96,12 +96,25 @@ export default function Cookie2Json({ enterAction }) {
     );
   }
 
+  function extractCookieFromCurl(value) {
+    if (value.startsWith("curl --location")) {
+      const match = value.match(/--header 'Cookie: (.+?)'/g);
+      if (match) {
+        return match[0].replace(/--header 'Cookie: (.+?)'/g, "$1");
+      }
+    }
+    return value;
+  }
+
   // 处理输入框内容变化
   const handleInputChange = (e) => {
     const value = e.target.value;
     setCookieString(value);
     try {
-      const result = convertCookieToJson(value);
+      let cookieStr = value;
+      cookieStr = extractCookieFromCurl(value);
+
+      const result = convertCookieToJson(cookieStr);
       const formattedJson = JSON.stringify(result, null, 2);
       setJsonResult(formattedJson);
       setHighlightedJson(highlightJson(formattedJson));
