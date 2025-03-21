@@ -27,6 +27,7 @@ export default function Cookie2Json({ enterAction }) {
         id: doc._id.replace("cookie2json/", ""),
         content: doc.data.content,
         timestamp: doc.data.timestamp,
+        name: doc.data.name,
       }))
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 1000); // 只保留最近1000条记录
