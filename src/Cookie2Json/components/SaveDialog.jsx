@@ -8,11 +8,12 @@ export default function SaveDialog({ onSave, onCancel }) {
   const updateDialogPosition = () => {
     if (dialogRef.current) {
       const saveButton = document.querySelector(
-        ".button-container .save-button"
+        ".output-container .button-container .save-button"
       );
       if (saveButton) {
         const rect = saveButton.getBoundingClientRect();
-        dialogRef.current.style.left = `${rect.left + rect.width / 2}px`;
+        const dialog = dialogRef.current;
+        dialog.style.right = `${window.innerWidth - rect.right}px`;
       }
     }
   };
@@ -43,7 +44,9 @@ export default function SaveDialog({ onSave, onCancel }) {
   };
 
   const handleOverlayClick = (e) => {
-    e.stopPropagation();
+    if (e.target === e.currentTarget) {
+      onCancel();
+    }
   };
 
   return (

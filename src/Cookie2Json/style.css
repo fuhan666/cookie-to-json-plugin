@@ -187,10 +187,10 @@
   opacity: 0.7;
 }
 
-/* 删除按钮样式优化 */
+/* 统一编辑和删除按钮的基础样式 */
+.edit-button,
 .delete-button {
   position: absolute;
-  right: 10px;
   top: 50%;
   transform: translateY(-50%);
   background-color: transparent;
@@ -204,33 +204,36 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
+  visibility: hidden;
   transition: all 0.3s ease;
   padding: 0;
   line-height: 1;
+  z-index: 2;
 }
 
+.history-item:hover .edit-button,
 .history-item:hover .delete-button {
-  opacity: 1;
+  visibility: visible;
 }
 
+.edit-button:hover,
 .delete-button:hover {
   background-color: var(--focus-color);
   color: white;
   transform: translateY(-50%) scale(1.1);
 }
 
+.edit-button:active,
 .delete-button:active {
   transform: translateY(-50%) scale(0.95);
 }
 
-/* 按钮间距优化 */
-.button-container {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 12px;
+.edit-button {
+  right: 50px;
+}
+
+.delete-button {
+  right: 10px;
 }
 
 .history-item {
@@ -247,7 +250,7 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.history-item:hover {
+.history-item:not(.editing):hover {
   border-color: var(--focus-color);
   background-color: var(--history-item-hover-bg);
   box-shadow: 0 2px 8px var(--focus-shadow);
@@ -263,18 +266,27 @@
   top: 0;
   bottom: 0;
   width: 45px;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   z-index: 1;
-  opacity: 0;
-  transition: opacity 0.3s ease;
   cursor: pointer;
 }
 
 .history-item:hover .history-item-checkbox,
 .history-item-checkbox.show {
-  opacity: 1;
+  display: flex;
+}
+
+/* 当有记录处于编辑状态时，禁用所有复选框的显示 */
+.history-container:has(.history-item.editing) .history-item-checkbox {
+  display: none !important;
+  pointer-events: none !important;
+}
+
+.history-container:has(.history-item.editing) .history-item-checkbox input[type="checkbox"] {
+  pointer-events: none;
+  cursor: default;
 }
 
 .history-item-checkbox input[type="checkbox"] {
@@ -318,6 +330,7 @@
   opacity: 0.7;
   margin-bottom: 5px;
   margin-left: 45px;
+  margin-right: 82px;
 }
 
 .history-item-content {
@@ -326,7 +339,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   margin-left: 45px;
-  padding-right: 40px;
+  margin-right: 82px;
+  padding-right: 0;
 }
 
 /* 自定义提示弹窗 */
@@ -461,27 +475,28 @@
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
 }
 
 .save-dialog {
   position: absolute;
-  bottom: 60px;
-  right: 0;
   background-color: var(--container-bg);
-  padding: 12px;
+  padding: 16px;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  width: 200px;
-  transform: translateX(-50%);
+  width: 280px;
   border: 1px solid var(--border-color);
+  margin-bottom: 50px;
+  animation: dialogFadeIn 0.2s ease;
 }
 
 .save-dialog::after {
   content: '';
   position: absolute;
   bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 30px;
   width: 0;
   height: 0;
   border-left: 6px solid transparent;
@@ -493,8 +508,7 @@
   content: '';
   position: absolute;
   bottom: -5px;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 30px;
   width: 0;
   height: 0;
   border-left: 6px solid transparent;
@@ -503,13 +517,24 @@
   z-index: 1;
 }
 
+@keyframes dialogFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .save-dialog-input {
   width: 100%;
-  padding: 8px 10px;
+  padding: 10px 12px;
   border: 1px solid var(--border-color);
-  border-radius: 4px;
-  margin-bottom: 8px;
-  font-size: 13px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
   background-color: var(--input-bg);
   color: var(--text-color);
   box-sizing: border-box;
@@ -524,17 +549,17 @@
 .save-dialog-buttons {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 12px;
 }
 
 .save-dialog .save-button,
 .save-dialog .cancel-button {
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
   cursor: pointer;
-  min-width: 50px;
-  height: 28px;
+  min-width: 80px;
+  height: 36px;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -547,24 +572,23 @@
   border: none;
 }
 
-.save-dialog .cancel-button {
-  background: none;
-  border: none;
-  color: var(--text-color);
-  opacity: 0.8;
-  padding: 4px 8px;
-  min-width: 50px;
-}
-
 .save-dialog .save-button:hover {
   opacity: 0.9;
+  box-shadow: 0 2px 8px var(--focus-shadow);
+}
+
+.save-dialog .cancel-button {
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
 }
 
 .save-dialog .cancel-button:hover {
-  opacity: 1;
-  background: none;
+  background-color: var(--input-bg);
+  border-color: var(--focus-color);
 }
 
+.save-dialog .save-button:active,
 .save-dialog .cancel-button:active {
   transform: translateY(1px);
 }
@@ -577,4 +601,191 @@
   border-radius: 12px;
   font-size: 12px;
   display: inline-block;
-} 
+}
+
+.history-item.editing {
+  background-color: var(--input-bg);
+  border-color: var(--focus-color);
+  box-shadow: 0 2px 8px var(--focus-shadow);
+  cursor: default;
+}
+
+.history-item.editing .history-item-edit-form {
+  cursor: auto;
+}
+
+.history-item-edit-form {
+  margin-left: 45px;
+  margin-right: 82px;
+  width: calc(100% - 127px);
+}
+
+.history-item-edit-row {
+  margin-bottom: 8px;
+}
+
+.history-item-name-input {
+  width: 200px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--container-bg);
+  color: var(--text-color);
+  font-size: 13px;
+}
+
+.history-item-name-input:focus {
+  border-color: var(--focus-color);
+  box-shadow: 0 0 0 2px var(--focus-shadow);
+  outline: none;
+}
+
+.history-item-content-input {
+  width: 100%;
+  min-height: 60px;
+  max-height: 50vh;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--container-bg);
+  color: var(--text-color);
+  font-family: 'SourceCodePro', monospace;
+  font-size: 13px;
+  resize: vertical;
+  overflow-y: auto;
+  height: auto;
+}
+
+.history-item-content-input:focus {
+  border-color: var(--focus-color);
+  box-shadow: 0 0 0 2px var(--focus-shadow);
+  outline: none;
+}
+
+.history-item-edit-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.history-item-edit-buttons .save-button,
+.history-item-edit-buttons .cancel-button {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  height: 28px;
+  min-width: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.history-item-edit-buttons .cancel-button {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
+.history-item-edit-buttons .cancel-button:hover {
+  opacity: 1;
+}
+
+/* 当记录处于编辑状态时，该记录的复选框也要禁用 */
+.history-item.editing .history-item-checkbox {
+  display: none !important;
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+.history-item.editing .history-item-checkbox input[type="checkbox"] {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+/* 当有记录处于编辑状态时的样式 */
+.history-container:has(.history-item.editing) .history-item:not(.editing) {
+  pointer-events: none;
+  cursor: default;
+  background-color: var(--history-item-bg);
+  box-shadow: none;
+  filter: grayscale(0.2);
+  transition: all 0.3s ease;
+}
+
+.history-container:has(.history-item.editing) .select-all-button,
+.history-container:has(.history-item.editing) .deselect-all-button,
+.history-container:has(.history-item.editing) .batch-delete-button {
+  pointer-events: none;
+  cursor: default;
+  background-color: var(--button-disabled);
+  box-shadow: none;
+}
+
+.history-item-time {
+  font-size: 12px;
+  color: var(--text-color);
+  margin-bottom: 5px;
+  margin-left: 45px;
+  margin-right: 82px;
+}
+
+.history-item-content {
+  font-family: 'SourceCodePro', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-left: 45px;
+  margin-right: 82px;
+  padding-right: 0;
+  color: var(--text-color);
+}
+
+/* 转换页面的按钮容器样式 */
+.input-container .button-container,
+.output-container .button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 0;
+}
+
+/* 历史记录页面的按钮样式 */
+.history-actions {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 0;
+  margin-bottom: 16px;
+}
+
+.history-actions-left {
+  display: flex;
+  gap: 16px;
+}
+
+/* 统一按钮基础样式 */
+.copy-button,
+.clear-button,
+.save-button,
+.select-all-button,
+.deselect-all-button,
+.batch-delete-button {
+  padding: 8px 24px;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  height: 36px;
+  min-width: 120px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: var(--focus-color);
+}

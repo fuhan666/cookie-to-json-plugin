@@ -1,3 +1,5 @@
+import React, { useState, useEffect, useRef } from "react";
+
 export default function HistoryPage({
   history,
   setHistory,
@@ -6,6 +8,119 @@ export default function HistoryPage({
   loadFromHistory,
   showToastMessage,
 }) {
+  const [editingItem, setEditingItem] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const nameInputRef = useRef(null);
+
+  // 自动调整文本框高度
+  const adjustTextareaHeight = (textarea) => {
+    if (textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(
+        textarea.scrollHeight,
+        window.innerHeight * 0.5
+      )}px`;
+    }
+  };
+
+  // 处理文本框内容变化
+  const handleContentChange = (e) => {
+    setEditContent(e.target.value);
+    adjustTextareaHeight(e.target);
+  };
+
+  // 开始编辑
+  const startEdit = (item) => {
+    setEditingItem(item);
+    setEditName(item.name || "");
+    setEditContent(item.content);
+    // 使用 setTimeout 确保在 DOM 更新后再聚焦和滚动
+    setTimeout(() => {
+      if (nameInputRef.current) {
+        nameInputRef.current.focus();
+
+        // 获取编辑项的DOM元素
+        const editingItemElement =
+          nameInputRef.current.closest(".history-item");
+        if (editingItemElement) {
+          // 获取编辑项的位置信息
+          const rect = editingItemElement.getBoundingClientRect();
+          const containerElement =
+            editingItemElement.closest(".history-container");
+
+          // 计算需要的额外空间
+          const topPadding = 60; // 增加顶部空间
+          const bottomPadding = 20;
+
+          // 如果编辑项顶部不可见或太靠近顶部，向上滚动
+          if (rect.top < topPadding) {
+            containerElement.scrollBy({
+              top: rect.top - topPadding,
+              behavior: "smooth",
+            });
+          }
+          // 如果编辑项底部超出可视区域，向下滚动
+          else if (rect.bottom > window.innerHeight) {
+            const scrollOffset =
+              rect.bottom - window.innerHeight + bottomPadding;
+            containerElement.scrollBy({
+              top: scrollOffset,
+              behavior: "smooth",
+            });
+          }
+        }
+      }
+    }, 0);
+  };
+
+  // 取消编辑
+  const cancelEdit = () => {
+    setEditingItem(null);
+    setEditName("");
+    setEditContent("");
+  };
+
+  // 保存编辑
+  const saveEdit = (item) => {
+    const docId = `cookie2json/${item.id}`;
+    // 先获取当前文档
+    const currentDoc = window.utools.db.get(docId);
+    if (!currentDoc) {
+      showToastMessage("修改失败：找不到原始记录");
+      return;
+    }
+
+    const doc = {
+      _id: docId,
+      _rev: currentDoc._rev, // 添加 _rev 字段
+      data: {
+        content: editContent,
+        timestamp: item.timestamp,
+        name: editName,
+      },
+    };
+
+    const result = window.utools.db.put(doc);
+    if (result.ok) {
+      const newHistory = history.map((h) => {
+        if (h.id === item.id) {
+          return {
+            ...h,
+            content: editContent,
+            name: editName,
+          };
+        }
+        return h;
+      });
+      setHistory(newHistory);
+      showToastMessage("修改成功");
+      cancelEdit();
+    } else {
+      showToastMessage("修改失败：" + (result.message || "未知错误"));
+    }
+  };
+
   // 全选功能
   const selectAll = () => {
     const allIds = history.map((item) => item.id);
@@ -30,7 +145,7 @@ export default function HistoryPage({
     if (successCount > 0) {
       const newHistory = history.filter((h) => !selectedItems.has(h.id));
       setHistory(newHistory);
-      setSelectedItems(new Set()); // 清空选中项
+      setSelectedItems(new Set());
       showToastMessage(
         `成功删除${successCount}条记录${
           failCount > 0 ? `，${failCount}条删除失败` : ""
@@ -43,7 +158,7 @@ export default function HistoryPage({
 
   // 删除单条历史记录
   const deleteHistory = (e, item) => {
-    e.stopPropagation(); // 阻止触发loadFromHistory
+    e.stopPropagation();
     const docId = `cookie2json/${item.id}`;
     const result = window.utools.db.remove(docId);
     if (result.ok) {
@@ -57,7 +172,7 @@ export default function HistoryPage({
 
   // 添加选择/取消选择项目的处理函数
   const toggleSelectItem = (e, item) => {
-    e.stopPropagation(); // 阻止触发loadFromHistory
+    e.stopPropagation();
     const newSelected = new Set(selectedItems);
     if (newSelected.has(item.id)) {
       newSelected.delete(item.id);
@@ -110,12 +225,15 @@ export default function HistoryPage({
         history.map((item) => (
           <div
             key={item.id}
-            className="history-item"
+            className={`history-item ${
+              editingItem?.id === item.id ? "editing" : ""
+            }`}
             onClick={(e) => {
-              // 如果点击的是复选框区域或删除按钮，不触发加载
               if (
                 e.target.closest(".history-item-checkbox") ||
-                e.target.closest(".delete-button")
+                e.target.closest(".delete-button") ||
+                e.target.closest(".edit-button") ||
+                editingItem?.id === item.id
               ) {
                 return;
               }
@@ -127,6 +245,7 @@ export default function HistoryPage({
                 selectedItems.size > 0 ? "show" : ""
               }`}
               onClick={(e) => {
+                if (editingItem) return;
                 e.stopPropagation();
                 toggleSelectItem(e, item);
               }}
@@ -135,24 +254,73 @@ export default function HistoryPage({
                 type="checkbox"
                 checked={selectedItems.has(item.id)}
                 onChange={(e) => {
+                  if (editingItem) return;
                   e.stopPropagation();
                   toggleSelectItem(e, item);
                 }}
               />
             </div>
-            <div className="history-item-time">
-              {new Date(item.timestamp).toLocaleString()}
-              {item.name && (
-                <span className="history-item-name">{item.name}</span>
-              )}
-            </div>
-            <div className="history-item-content">{item.content}</div>
-            <button
-              className="delete-button"
-              onClick={(e) => deleteHistory(e, item)}
-            >
-              ×
-            </button>
+            {editingItem?.id === item.id ? (
+              <div
+                className="history-item-edit-form"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="history-item-edit-row">
+                  <input
+                    ref={nameInputRef}
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="输入名称（可选）"
+                    className="history-item-name-input"
+                  />
+                </div>
+                <div className="history-item-edit-row">
+                  <textarea
+                    value={editContent}
+                    onChange={handleContentChange}
+                    className="history-item-content-input"
+                    onFocus={(e) => adjustTextareaHeight(e.target)}
+                  />
+                </div>
+                <div className="history-item-edit-buttons">
+                  <button
+                    onClick={() => saveEdit(item)}
+                    className="save-button"
+                  >
+                    保存
+                  </button>
+                  <button onClick={cancelEdit} className="cancel-button">
+                    取消
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="history-item-time">
+                  {new Date(item.timestamp).toLocaleString()}
+                  {item.name && (
+                    <span className="history-item-name">{item.name}</span>
+                  )}
+                </div>
+                <div className="history-item-content">{item.content}</div>
+                <button
+                  className="edit-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startEdit(item);
+                  }}
+                >
+                  ✎
+                </button>
+                <button
+                  className="delete-button"
+                  onClick={(e) => deleteHistory(e, item)}
+                >
+                  ×
+                </button>
+              </>
+            )}
           </div>
         ))
       )}
