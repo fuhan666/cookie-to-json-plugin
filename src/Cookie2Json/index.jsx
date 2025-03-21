@@ -18,6 +18,7 @@ export default function Cookie2Json({ enterAction }) {
   const [history, setHistory] = useState([]);
   const [lastInputContent, setLastInputContent] = useState(""); // 添加新的状态来保存最后的输入内容
   const [selectedItems, setSelectedItems] = useState(new Set()); // 添加选中项的状态
+  const [animationDirection, setAnimationDirection] = useState("fadeIn"); // 'fadeIn', 'slideLeft', 'slideRight'
 
   // 初始化时从数据库加载历史记录
   useEffect(() => {
@@ -112,10 +113,26 @@ export default function Cookie2Json({ enterAction }) {
   };
 
   // 从历史记录中加载
-  const loadFromHistory = (item) => {
-    setActiveTab("convert");
-    setLastInputContent(item.content);
-    handleInputChange({ target: { innerText: item.content } });
+  const loadFromHistory = (item, event) => {
+    // 如果存在事件和目标元素，添加点击动画效果
+    if (event && event.currentTarget) {
+      const historyItem = event.currentTarget;
+      historyItem.classList.add("clicked");
+
+      // 添加短暂延迟以便动画效果可见
+      setTimeout(() => {
+        setAnimationDirection("slideRight"); // 从历史记录切换到转换页面
+        setActiveTab("convert");
+        setLastInputContent(item.content);
+        handleInputChange({ target: { innerText: item.content } });
+      }, 50);
+    } else {
+      // 没有事件对象时，直接切换
+      setAnimationDirection("slideRight"); // 从历史记录切换到转换页面
+      setActiveTab("convert");
+      setLastInputContent(item.content);
+      handleInputChange({ target: { innerText: item.content } });
+    }
   };
 
   // 处理输入框内容变化
@@ -145,6 +162,7 @@ export default function Cookie2Json({ enterAction }) {
           className={`tab-item ${activeTab === "convert" ? "active" : ""}`}
           onClick={() => {
             if (activeTab !== "convert") {
+              setAnimationDirection("slideRight"); // 从历史记录切换到转换页面
               setActiveTab("convert");
               setSelectedItems(new Set()); // 清空选中状态
             }
@@ -155,7 +173,10 @@ export default function Cookie2Json({ enterAction }) {
         <div
           className={`tab-item ${activeTab === "history" ? "active" : ""}`}
           onClick={() => {
-            setActiveTab("history");
+            if (activeTab !== "history") {
+              setAnimationDirection("slideLeft"); // 从转换页面切换到历史记录
+              setActiveTab("history");
+            }
           }}
         >
           历史记录
@@ -175,6 +196,7 @@ export default function Cookie2Json({ enterAction }) {
           showToastMessage={showToastMessage}
           handleInputChange={handleInputChange}
           saveToHistory={saveToHistory}
+          animationDirection={animationDirection}
         />
       ) : (
         <HistoryPage
@@ -184,6 +206,7 @@ export default function Cookie2Json({ enterAction }) {
           setSelectedItems={setSelectedItems}
           loadFromHistory={loadFromHistory}
           showToastMessage={showToastMessage}
+          animationDirection={animationDirection}
         />
       )}
     </div>

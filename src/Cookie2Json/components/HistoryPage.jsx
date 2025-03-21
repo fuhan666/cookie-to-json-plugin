@@ -7,6 +7,7 @@ export default function HistoryPage({
   setSelectedItems,
   loadFromHistory,
   showToastMessage,
+  animationDirection,
 }) {
   const [editingItem, setEditingItem] = useState(null);
   const [editName, setEditName] = useState("");
@@ -17,10 +18,32 @@ export default function HistoryPage({
   const adjustTextareaHeight = (textarea) => {
     if (textarea) {
       textarea.style.height = "auto";
-      textarea.style.height = `${Math.min(
+      const newHeight = Math.min(
         textarea.scrollHeight,
         window.innerHeight * 0.5
-      )}px`;
+      );
+      textarea.style.height = `${newHeight}px`;
+
+      // 获取编辑项的DOM元素
+      const editingItemElement = textarea.closest(".history-item");
+      if (editingItemElement) {
+        // 获取编辑项的位置信息
+        const rect = editingItemElement.getBoundingClientRect();
+        const containerElement =
+          editingItemElement.closest(".history-container");
+
+        // 计算需要的额外空间
+        const bottomPadding = 20;
+
+        // 如果编辑项底部超出可视区域，向下滚动
+        if (rect.bottom > window.innerHeight) {
+          const scrollOffset = rect.bottom - window.innerHeight + bottomPadding;
+          containerElement.scrollBy({
+            top: scrollOffset,
+            behavior: "smooth",
+          });
+        }
+      }
     }
   };
 
@@ -32,9 +55,11 @@ export default function HistoryPage({
 
   // 开始编辑
   const startEdit = (item) => {
+    // 先设置编辑状态，触发UI更新
     setEditingItem(item);
     setEditName(item.name || "");
     setEditContent(item.content);
+
     // 使用 setTimeout 确保在 DOM 更新后再聚焦和滚动
     setTimeout(() => {
       if (nameInputRef.current) {
@@ -44,6 +69,9 @@ export default function HistoryPage({
         const editingItemElement =
           nameInputRef.current.closest(".history-item");
         if (editingItemElement) {
+          // 添加动画开始类
+          editingItemElement.classList.add("editing-start");
+
           // 获取编辑项的位置信息
           const rect = editingItemElement.getBoundingClientRect();
           const containerElement =
@@ -183,8 +211,8 @@ export default function HistoryPage({
   };
 
   return (
-    <div className="history-container">
-      {history.length > 0 && (
+    <div className={`history-container ${animationDirection}`}>
+      {history.length > 0 && !editingItem && (
         <div className="history-actions">
           <div className="history-actions-left">
             <button
@@ -192,14 +220,14 @@ export default function HistoryPage({
               onClick={selectAll}
               disabled={history.length === 0}
             >
-              全选
+              <span>全选</span>
             </button>
             <button
               className="deselect-all-button"
               onClick={deselectAll}
               disabled={selectedItems.size === 0}
             >
-              取消选择
+              <span>取消选择</span>
             </button>
           </div>
           <button
@@ -207,7 +235,7 @@ export default function HistoryPage({
             onClick={deleteSelectedHistory}
             disabled={selectedItems.size === 0}
           >
-            删除选中({selectedItems.size})
+            <span>删除选中({selectedItems.size})</span>
           </button>
         </div>
       )}
@@ -237,7 +265,7 @@ export default function HistoryPage({
               ) {
                 return;
               }
-              loadFromHistory(item);
+              loadFromHistory(item, e);
             }}
           >
             <div
@@ -274,6 +302,17 @@ export default function HistoryPage({
                     placeholder="输入名称（可选）"
                     className="history-item-name-input"
                   />
+                  <div className="history-item-edit-buttons">
+                    <button
+                      onClick={() => saveEdit(item)}
+                      className="save-button"
+                    >
+                      保存
+                    </button>
+                    <button onClick={cancelEdit} className="cancel-button">
+                      取消
+                    </button>
+                  </div>
                 </div>
                 <div className="history-item-edit-row">
                   <textarea
@@ -282,17 +321,6 @@ export default function HistoryPage({
                     className="history-item-content-input"
                     onFocus={(e) => adjustTextareaHeight(e.target)}
                   />
-                </div>
-                <div className="history-item-edit-buttons">
-                  <button
-                    onClick={() => saveEdit(item)}
-                    className="save-button"
-                  >
-                    保存
-                  </button>
-                  <button onClick={cancelEdit} className="cancel-button">
-                    取消
-                  </button>
                 </div>
               </div>
             ) : (

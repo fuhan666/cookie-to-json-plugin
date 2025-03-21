@@ -13,6 +13,7 @@ export default function ConvertPage({
   showToastMessage,
   handleInputChange,
   saveToHistory,
+  animationDirection,
 }) {
   const inputRef = useRef(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -66,7 +67,7 @@ export default function ConvertPage({
   };
 
   return (
-    <div className="content-container">
+    <div className={`content-container ${animationDirection}`}>
       {showSaveDialog && (
         <SaveDialog onSave={handleSaveConfirm} onCancel={handleSaveCancel} />
       )}
