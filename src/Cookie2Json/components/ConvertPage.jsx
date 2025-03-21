@@ -1,4 +1,5 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
+import SaveDialog from "./SaveDialog";
 
 export default function ConvertPage({
   cookieString,
@@ -14,6 +15,7 @@ export default function ConvertPage({
   saveToHistory,
 }) {
   const inputRef = useRef(null);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // 监听 lastInputContent 变化，更新输入框内容
   useEffect(() => {
@@ -50,8 +52,24 @@ export default function ConvertPage({
     }
   };
 
+  const handleSave = () => {
+    setShowSaveDialog(true);
+  };
+
+  const handleSaveConfirm = (name) => {
+    saveToHistory(name);
+    setShowSaveDialog(false);
+  };
+
+  const handleSaveCancel = () => {
+    setShowSaveDialog(false);
+  };
+
   return (
     <div className="content-container">
+      {showSaveDialog && (
+        <SaveDialog onSave={handleSaveConfirm} onCancel={handleSaveCancel} />
+      )}
       <div className="input-container">
         <div
           ref={inputRef}
@@ -87,7 +105,7 @@ export default function ConvertPage({
           </button>
           <button
             className="save-button"
-            onClick={saveToHistory}
+            onClick={handleSave}
             disabled={!cookieString}
           >
             保存

@@ -226,6 +226,7 @@
 
 /* 按钮间距优化 */
 .button-container {
+  position: relative;
   display: flex;
   justify-content: center;
   gap: 16px;
@@ -449,4 +450,131 @@
 .json-error {
   color: var(--json-error-color);
   font-weight: bold;
+}
+
+/* 保存对话框样式 */
+.save-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+.save-dialog {
+  position: absolute;
+  bottom: 60px;
+  right: 0;
+  background-color: var(--container-bg);
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  width: 200px;
+  transform: translateX(-50%);
+  border: 1px solid var(--border-color);
+}
+
+.save-dialog::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--border-color);
+}
+
+.save-dialog::before {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--container-bg);
+  z-index: 1;
+}
+
+.save-dialog-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  box-sizing: border-box;
+}
+
+.save-dialog-input:focus {
+  border-color: var(--focus-color);
+  box-shadow: 0 0 0 2px var(--focus-shadow);
+  outline: none;
+}
+
+.save-dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.save-dialog .save-button,
+.save-dialog .cancel-button {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  min-width: 50px;
+  height: 28px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.save-dialog .save-button {
+  background-color: var(--focus-color);
+  color: white;
+  border: none;
+}
+
+.save-dialog .cancel-button {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  opacity: 0.8;
+  padding: 4px 8px;
+  min-width: 50px;
+}
+
+.save-dialog .save-button:hover {
+  opacity: 0.9;
+}
+
+.save-dialog .cancel-button:hover {
+  opacity: 1;
+  background: none;
+}
+
+.save-dialog .cancel-button:active {
+  transform: translateY(1px);
+}
+
+.history-item-name {
+  margin-left: 12px;
+  padding: 2px 8px;
+  background-color: var(--focus-color);
+  color: white;
+  border-radius: 12px;
+  font-size: 12px;
+  display: inline-block;
 } 

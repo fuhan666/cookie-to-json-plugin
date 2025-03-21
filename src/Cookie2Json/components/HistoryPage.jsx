@@ -142,6 +142,9 @@ export default function HistoryPage({
             </div>
             <div className="history-item-time">
               {new Date(item.timestamp).toLocaleString()}
+              {item.name && (
+                <span className="history-item-name">{item.name}</span>
+              )}
             </div>
             <div className="history-item-content">{item.content}</div>
             <button

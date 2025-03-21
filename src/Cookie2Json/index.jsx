@@ -66,7 +66,7 @@ export default function Cookie2Json({ enterAction }) {
   };
 
   // 保存到历史记录
-  const saveToHistory = () => {
+  const saveToHistory = (name = "") => {
     if (!cookieString) return;
 
     const timestamp = Date.now();
@@ -76,6 +76,7 @@ export default function Cookie2Json({ enterAction }) {
       data: {
         content: cookieString,
         timestamp: timestamp,
+        name: name,
       },
     };
 
@@ -86,6 +87,7 @@ export default function Cookie2Json({ enterAction }) {
           id: timestamp,
           content: cookieString,
           timestamp: timestamp,
+          name: name,
         },
         ...history,
       ].slice(0, 1000); // 只保留最近1000条记录
