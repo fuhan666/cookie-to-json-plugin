@@ -242,16 +242,34 @@
 }
 
 .history-actions {
+  position: fixed !important;
+  right: 20px !important;
+  bottom: 0 !important;
+  z-index: 1000 !important;
+  margin-bottom: 10px !important;
+  box-sizing: border-box !important;
+  background-color: transparent;
+  transform: translateZ(0); /* 强制硬件加速 */
+  will-change: transform; /* 提示浏览器该元素会有变化 */
+  transition: none !important; /* 移除过渡效果，确保立即显示 */
+  pointer-events: auto; /* 确保点击事件生效 */
   display: flex;
   justify-content: space-between;
   padding: 12px;
-  margin-bottom: 10px;
-  position: fixed;
-  bottom: 0px;
-  right: 20px;
-  z-index: 100;
   gap: 12px;
-  background: transparent;
+}
+
+/* 页面切换动画不应影响固定定位元素 */
+.history-container.slideLeft .history-actions,
+.history-container.slideRight .history-actions,
+.history-container .history-actions {
+  animation: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateZ(0) !important; /* 强制硬件加速 */
+  position: fixed !important; /* 强制固定定位 */
+  bottom: 0 !important; /* 固定在底部 */
+  right: 20px !important; /* 固定在右侧 */
 }
 
 .history-actions-left {
@@ -1132,7 +1150,6 @@
   margin-top: 0;
 }
 
-/* 添加页面切换动画 */
 /* 历史记录项点击效果 */
 .history-item.clicked {
   transform: scale(0.98);

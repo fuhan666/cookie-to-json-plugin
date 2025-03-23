@@ -303,10 +303,7 @@ export default function HistoryPage({
   };
 
   return (
-    <div
-      className={`history-container ${animationDirection}`}
-      ref={historyContainerRef}
-    >
+    <>
       {history.length > 0 && !editingItem && (
         <div className="history-actions">
           <div className="history-actions-left">
@@ -343,120 +340,126 @@ export default function HistoryPage({
           </button>
         </div>
       )}
-      {history.length === 0 ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "20px",
-            color: "var(--text-color)",
-          }}
-        >
-          暂无历史记录
-        </div>
-      ) : (
-        history.map((item) => (
+
+      <div
+        className={`history-container ${animationDirection}`}
+        ref={historyContainerRef}
+      >
+        {history.length === 0 ? (
           <div
-            key={item.id}
-            data-id={item.id}
-            className={`history-item ${
-              editingItem?.id === item.id ? "editing" : ""
-            }`}
-            onClick={(e) => {
-              if (
-                e.target.closest(".history-item-checkbox") ||
-                e.target.closest(".delete-button") ||
-                e.target.closest(".edit-button") ||
-                editingItem?.id === item.id
-              ) {
-                return;
-              }
-              loadFromHistory(item, e);
+            style={{
+              textAlign: "center",
+              padding: "20px",
+              color: "var(--text-color)",
             }}
           >
+            暂无历史记录
+          </div>
+        ) : (
+          history.map((item) => (
             <div
-              className={`history-item-checkbox ${
-                selectedItems.size > 0 ? "show" : ""
+              key={item.id}
+              data-id={item.id}
+              className={`history-item ${
+                editingItem?.id === item.id ? "editing" : ""
               }`}
               onClick={(e) => {
-                if (editingItem) return;
-                e.stopPropagation();
-                toggleSelectItem(e, item);
+                if (
+                  e.target.closest(".history-item-checkbox") ||
+                  e.target.closest(".delete-button") ||
+                  e.target.closest(".edit-button") ||
+                  editingItem?.id === item.id
+                ) {
+                  return;
+                }
+                loadFromHistory(item, e);
               }}
             >
-              <input
-                type="checkbox"
-                checked={selectedItems.has(item.id)}
-                onChange={(e) => {
+              <div
+                className={`history-item-checkbox ${
+                  selectedItems.size > 0 ? "show" : ""
+                }`}
+                onClick={(e) => {
                   if (editingItem) return;
                   e.stopPropagation();
                   toggleSelectItem(e, item);
                 }}
-              />
-            </div>
-            {editingItem?.id === item.id ? (
-              <div
-                className="history-item-edit-form"
-                onClick={(e) => e.stopPropagation()}
               >
-                <div className="history-item-edit-row">
-                  <input
-                    ref={nameInputRef}
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="输入名称（可选）"
-                    className="history-item-name-input"
-                  />
-                  <div className="history-item-edit-buttons">
-                    <button
-                      onClick={() => saveEdit(item)}
-                      className="save-button"
-                    >
-                      保存
-                    </button>
-                    <button onClick={cancelEdit} className="cancel-button">
-                      取消
-                    </button>
+                <input
+                  type="checkbox"
+                  checked={selectedItems.has(item.id)}
+                  onChange={(e) => {
+                    if (editingItem) return;
+                    e.stopPropagation();
+                    toggleSelectItem(e, item);
+                  }}
+                />
+              </div>
+              {editingItem?.id === item.id ? (
+                <div
+                  className="history-item-edit-form"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="history-item-edit-row">
+                    <input
+                      ref={nameInputRef}
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="输入名称（可选）"
+                      className="history-item-name-input"
+                    />
+                    <div className="history-item-edit-buttons">
+                      <button
+                        onClick={() => saveEdit(item)}
+                        className="save-button"
+                      >
+                        保存
+                      </button>
+                      <button onClick={cancelEdit} className="cancel-button">
+                        取消
+                      </button>
+                    </div>
+                  </div>
+                  <div className="history-item-edit-row">
+                    <textarea
+                      value={editContent}
+                      onChange={handleContentChange}
+                      className="history-item-content-input"
+                      onFocus={(e) => adjustTextareaHeight(e.target)}
+                    />
                   </div>
                 </div>
-                <div className="history-item-edit-row">
-                  <textarea
-                    value={editContent}
-                    onChange={handleContentChange}
-                    className="history-item-content-input"
-                    onFocus={(e) => adjustTextareaHeight(e.target)}
-                  />
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="history-item-time">
-                  {new Date(item.timestamp).toLocaleString()}
-                  {item.name && (
-                    <span className="history-item-name">{item.name}</span>
-                  )}
-                </div>
-                <div className="history-item-content">{item.content}</div>
-                <button
-                  className="edit-button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    startEdit(item);
-                  }}
-                >
-                  ✎
-                </button>
-                <button
-                  className="delete-button"
-                  onClick={(e) => deleteHistory(e, item)}
-                >
-                  ×
-                </button>
-              </>
-            )}
-          </div>
-        ))
-      )}
-    </div>
+              ) : (
+                <>
+                  <div className="history-item-time">
+                    {new Date(item.timestamp).toLocaleString()}
+                    {item.name && (
+                      <span className="history-item-name">{item.name}</span>
+                    )}
+                  </div>
+                  <div className="history-item-content">{item.content}</div>
+                  <button
+                    className="edit-button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      startEdit(item);
+                    }}
+                  >
+                    ✎
+                  </button>
+                  <button
+                    className="delete-button"
+                    onClick={(e) => deleteHistory(e, item)}
+                  >
+                    ×
+                  </button>
+                </>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </>
   );
 }

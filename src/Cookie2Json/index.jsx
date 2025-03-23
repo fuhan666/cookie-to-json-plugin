@@ -183,7 +183,7 @@ export default function Cookie2Json({ enterAction }) {
         </div>
       </div>
 
-      {activeTab === "convert" ? (
+      {activeTab === "convert" && (
         <ConvertPage
           cookieString={cookieString}
           setCookieString={setCookieString}
@@ -198,7 +198,9 @@ export default function Cookie2Json({ enterAction }) {
           saveToHistory={saveToHistory}
           animationDirection={animationDirection}
         />
-      ) : (
+      )}
+
+      {activeTab === "history" && (
         <HistoryPage
           history={history}
           setHistory={setHistory}
