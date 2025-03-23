@@ -45,33 +45,52 @@ export default function HistoryPage({
   // 自动调整文本框高度
   const adjustTextareaHeight = (textarea) => {
     if (textarea) {
+      // 保存当前滚动位置
+      const containerElement = textarea.closest(".history-container");
+      const scrollTop = containerElement ? containerElement.scrollTop : 0;
+
+      // 临时禁用过渡
+      const originalTransition = textarea.style.transition;
+      textarea.style.transition = "none";
+
+      // 设置为自动高度来获取内容实际高度
       textarea.style.height = "auto";
-      const newHeight = Math.min(
-        textarea.scrollHeight,
-        window.innerHeight * 0.5
-      );
+      const scrollHeight = textarea.scrollHeight;
+
+      // 重置为当前高度以准备动画
+      const currentHeight = textarea.offsetHeight;
+      textarea.style.height = `${currentHeight}px`;
+
+      // 强制浏览器重绘
+      void textarea.offsetHeight;
+
+      // 恢复过渡效果并设置新高度
+      textarea.style.transition = originalTransition;
+      const newHeight = Math.min(scrollHeight, window.innerHeight * 0.5);
       textarea.style.height = `${newHeight}px`;
 
-      // 获取编辑项的DOM元素
-      const editingItemElement = textarea.closest(".history-item");
-      if (editingItemElement) {
-        // 获取编辑项的位置信息
-        const rect = editingItemElement.getBoundingClientRect();
-        const containerElement =
-          editingItemElement.closest(".history-container");
-
-        // 计算需要的额外空间
-        const bottomPadding = 20;
-
-        // 如果编辑项底部超出可视区域，向下滚动
-        if (rect.bottom > window.innerHeight) {
-          const scrollOffset = rect.bottom - window.innerHeight + bottomPadding;
-          containerElement.scrollBy({
-            top: scrollOffset,
-            behavior: "smooth",
-          });
-        }
+      // 恢复滚动位置
+      if (containerElement) {
+        containerElement.scrollTop = scrollTop;
       }
+
+      // 在动画结束后检查文本框位置并滚动
+      setTimeout(() => {
+        const editingItemElement = textarea.closest(".history-item");
+        if (editingItemElement && containerElement) {
+          // 获取编辑项的位置信息
+          const rect = editingItemElement.getBoundingClientRect();
+
+          // 如果编辑项底部超出可视区域，向下滚动
+          if (rect.bottom > window.innerHeight) {
+            const scrollOffset = rect.bottom - window.innerHeight + 20;
+            containerElement.scrollBy({
+              top: scrollOffset,
+              behavior: "smooth",
+            });
+          }
+        }
+      }, 80); // 与过渡动画时间匹配
     }
   };
 
