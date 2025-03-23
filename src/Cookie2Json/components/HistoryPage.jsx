@@ -12,7 +12,35 @@ export default function HistoryPage({
   const [editingItem, setEditingItem] = useState(null);
   const [editName, setEditName] = useState("");
   const [editContent, setEditContent] = useState("");
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const nameInputRef = useRef(null);
+  const historyContainerRef = useRef(null);
+
+  // 监听滚动事件
+  useEffect(() => {
+    const container = historyContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      // 当滚动位置大于100px时显示按钮，否则隐藏
+      setShowScrollTop(container.scrollTop > 100);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  // 返回顶部功能
+  const scrollToTop = () => {
+    if (historyContainerRef.current) {
+      historyContainerRef.current.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
+  };
 
   // 自动调整文本框高度
   const adjustTextareaHeight = (textarea) => {
@@ -211,10 +239,22 @@ export default function HistoryPage({
   };
 
   return (
-    <div className={`history-container ${animationDirection}`}>
+    <div
+      className={`history-container ${animationDirection}`}
+      ref={historyContainerRef}
+    >
       {history.length > 0 && !editingItem && (
         <div className="history-actions">
           <div className="history-actions-left">
+            {showScrollTop && (
+              <button
+                className="scroll-top-button"
+                onClick={scrollToTop}
+                title="返回顶部"
+              >
+                <span>返回顶部</span>
+              </button>
+            )}
             <button
               className="select-all-button"
               onClick={selectAll}

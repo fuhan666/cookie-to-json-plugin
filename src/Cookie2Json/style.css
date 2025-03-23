@@ -29,6 +29,54 @@
   border: 1px solid transparent;
 }
 
+/* 返回顶部按钮样式 */
+.scroll-top-button {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 13px;
+  height: 32px;
+  min-width: 90px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background-color: rgba(180, 74, 239, 0.75);
+  line-height: 1;
+  white-space: nowrap;
+  animation: fadeIn 0.3s ease;
+}
+
+.scroll-top-button span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scroll-top-button:hover {
+  box-shadow: 0 4px 12px var(--focus-shadow);
+  background-color: rgba(180, 74, 239, 0.85);
+}
+
+.scroll-top-button:active {
+  box-shadow: 0 2px 4px var(--focus-shadow);
+  background-color: rgba(180, 74, 239, 0.9);
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 :root {
   --bg-color: #ffffff;
   --container-bg: #ffffff;
