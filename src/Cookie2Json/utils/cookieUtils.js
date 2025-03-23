@@ -1,8 +1,8 @@
-export function convertCookieToJson(cookieString) {
+export function cookieStringToJson(cookieString) {
 	if (!cookieString) return {};
 	const obj = {};
 	// 分割每个Cookie键值对
-	const cookies = cookieString.split(";");
+	const cookies = cookieString.split("; ");
 
 	cookies.forEach((cookie) => {
 		const trimmedCookie = cookie.trim();
@@ -13,34 +13,88 @@ export function convertCookieToJson(cookieString) {
 		let key, value;
 
 		if (equalIndex === -1) {
-			key = trimmedCookie;
-			value = "";
-		} else {
-			key = trimmedCookie.slice(0, equalIndex);
-			value = trimmedCookie.slice(equalIndex + 1);
+			return
 		}
-
-		// 解码并存储到对象
+		key = trimmedCookie.slice(0, equalIndex);
+		value = trimmedCookie.slice(equalIndex + 1);
 		try {
 			obj[key.trim()] = decodeURIComponent(value);
 		} catch (e) {
-			obj[key.trim()] = value; // 解码失败则保留原值
+			obj[key.trim()] = value;
 		}
 	});
 
 	return obj;
 }
 
-export function extractCookieFromCurl(value) {
-	if (typeof value !== "string") return value;
+function unescapeString(str, escapeChar) {
+	if (!str || !escapeChar) {
+		return str;
+	}
 
-	if (value.startsWith("curl --location")) {
-		const match = value.match(/--header 'Cookie: (.+?)'/g);
-		if (match) {
-			return match[0].replace(/--header 'Cookie: (.+?)'/g, "$1");
+	let result = '';
+	let i = 0;
+	while (i < str.length) {
+		// 如果当前字符是转译符，且下一个字符存在
+		if (str[i] === escapeChar && i + 1 < str.length) {
+			// 将转译后的字符添加到结果（跳过转译符本身）
+			result += str[i + 1];
+			i += 2; // 跳过转译符和转译后的字符
+		} else {
+			// 直接添加非转译字符或末尾的孤立转译符
+			result += str[i];
+			i += 1;
 		}
 	}
+	return result;
+}
+
+// 删除多余的转义字符
+function fixEscapedValue(value) {
+	// 处理转义的双引号 \" 变成 "
+	value = value.replace(/\\"/g, '"');
+
+	// 处理多重转义的问题 \\" 变成 \"
+	value = value.replace(/\\\\/g, '\\');
+
 	return value;
+}
+
+export function extractCookieString(str) {
+	if (!str.startsWith('curl ')) {
+		return str;
+	}
+	// 处理curl(cmd)中的转义字符
+	if (str.startsWith('curl ^"')) {
+		str = unescapeString(str, '^');
+	}
+
+	const cookies = [];
+	const lines = str.split('\n').map(line => line.trim());
+
+	for (const line of lines) {
+		// -H 'Cookie: 一些cookie' \
+		// --header 'Cookie: 一些cookie' \
+		// -H "Cookie: 一些cookie" \
+		// --header "Cookie: 一些cookie" \
+		const headerMatch = line.match(/(?:-H|--header)\s+(['"]?)(Cookie:\s*.*?)(?=\1\s*(?:\\|,|$)|$)/);
+		if (headerMatch) {
+			const cookieValue = headerMatch[2].substring("Cookie:".length).trim();
+			cookies.push(fixEscapedValue(cookieValue));
+			continue;
+		}
+		// -b '一些cookie'
+		// --cookie '一些cookie'
+		// -b "一些cookie"
+		// --cookie "一些cookie"
+		const cookieFlagMatch = line.match(/(?:-b|--cookie)\s+(['"]?)(.*)\1/i);
+		if (cookieFlagMatch) {
+			cookies.push(fixEscapedValue(cookieFlagMatch[2]));
+			continue;
+		}
+	}
+
+	return cookies.length > 0 ? cookies.join("; ") : str;
 }
 
 // 高亮JSON语法

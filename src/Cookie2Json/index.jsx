@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import ConvertPage from "./components/ConvertPage";
 import HistoryPage from "./components/HistoryPage";
 import {
-  convertCookieToJson,
-  extractCookieFromCurl,
+  cookieStringToJson,
+  extractCookieString,
   highlightJson,
 } from "./utils/cookieUtils";
 import "./style.css";
@@ -141,8 +141,8 @@ export default function Cookie2Json({ enterAction }) {
     setCookieString(value);
     setLastInputContent(value); // 保存最后的输入内容
     try {
-      let cookieStr = extractCookieFromCurl(value);
-      const result = convertCookieToJson(cookieStr);
+      let cookieStr = extractCookieString(value);
+      const result = cookieStringToJson(cookieStr);
       const formattedJson = JSON.stringify(result, null, 2);
       setJsonResult(formattedJson);
       setHighlightedJson(highlightJson(formattedJson));
