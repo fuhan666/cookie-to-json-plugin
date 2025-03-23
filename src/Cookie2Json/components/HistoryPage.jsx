@@ -209,39 +209,84 @@ export default function HistoryPage({
 
   // 批量删除选中的历史记录
   const deleteSelectedHistory = () => {
-    const results = Array.from(selectedItems).map((id) => {
-      const docId = `cookie2json/${id}`;
-      return window.utools.db.remove(docId);
+    // 为选中的条目添加删除动画类
+    document.querySelectorAll(".history-item").forEach((item) => {
+      const id = parseInt(item.getAttribute("data-id"));
+      if (selectedItems.has(id)) {
+        item.classList.add("deleting");
+      }
     });
 
-    const successCount = results.filter((result) => result.ok).length;
-    const failCount = results.length - successCount;
+    // 等待动画完成后再删除
+    setTimeout(() => {
+      const results = Array.from(selectedItems).map((id) => {
+        const docId = `cookie2json/${id}`;
+        return window.utools.db.remove(docId);
+      });
 
-    if (successCount > 0) {
-      const newHistory = history.filter((h) => !selectedItems.has(h.id));
-      setHistory(newHistory);
-      setSelectedItems(new Set());
-      showToastMessage(
-        `成功删除${successCount}条记录${
-          failCount > 0 ? `，${failCount}条删除失败` : ""
-        }`
-      );
-    } else {
-      showToastMessage("删除失败");
-    }
+      const successCount = results.filter((result) => result.ok).length;
+      const failCount = results.length - successCount;
+
+      if (successCount > 0) {
+        // 删除成功，通过状态更新让React管理DOM
+        const newHistory = history.filter((h) => !selectedItems.has(h.id));
+        setHistory(newHistory);
+        setSelectedItems(new Set());
+        showToastMessage(
+          `成功删除${successCount}条记录${
+            failCount > 0 ? `，${failCount}条删除失败` : ""
+          }`
+        );
+      } else {
+        // 删除失败，移除动画类
+        document.querySelectorAll(".history-item.deleting").forEach((item) => {
+          item.classList.remove("deleting");
+        });
+        showToastMessage("删除失败");
+      }
+    }, 250);
   };
 
   // 删除单条历史记录
   const deleteHistory = (e, item) => {
     e.stopPropagation();
-    const docId = `cookie2json/${item.id}`;
-    const result = window.utools.db.remove(docId);
-    if (result.ok) {
-      const newHistory = history.filter((h) => h.id !== item.id);
-      setHistory(newHistory);
-      showToastMessage("已删除该记录");
+
+    // 首先添加按钮点击动画
+    const deleteButton = e.currentTarget;
+
+    // 获取点击的记录项元素
+    const historyItem = deleteButton.closest(".history-item");
+    if (historyItem) {
+      // 添加删除动画类，使用CSS控制动画
+      historyItem.classList.add("deleting");
+
+      // 等待动画完成后再删除
+      setTimeout(() => {
+        const docId = `cookie2json/${item.id}`;
+        const result = window.utools.db.remove(docId);
+
+        if (result.ok) {
+          // 删除成功后，通过状态更新触发React重新渲染
+          const newHistory = history.filter((h) => h.id !== item.id);
+          setHistory(newHistory);
+          showToastMessage("删除成功");
+        } else {
+          // 如果删除失败，移除动画类
+          historyItem.classList.remove("deleting");
+          showToastMessage("删除失败：" + (result.message || "未知错误"));
+        }
+      }, 250);
     } else {
-      showToastMessage("删除失败：" + (result.message || "未知错误"));
+      // 如果没有找到元素，直接删除
+      const docId = `cookie2json/${item.id}`;
+      const result = window.utools.db.remove(docId);
+      if (result.ok) {
+        const newHistory = history.filter((h) => h.id !== item.id);
+        setHistory(newHistory);
+        showToastMessage("删除成功");
+      } else {
+        showToastMessage("删除失败：" + (result.message || "未知错误"));
+      }
     }
   };
 
@@ -312,6 +357,7 @@ export default function HistoryPage({
         history.map((item) => (
           <div
             key={item.id}
+            data-id={item.id}
             className={`history-item ${
               editingItem?.id === item.id ? "editing" : ""
             }`}

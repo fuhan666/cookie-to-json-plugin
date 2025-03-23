@@ -213,6 +213,7 @@
   overflow-y: auto;
   position: relative;
   animation: fadeIn 0.18s ease-in-out;
+  will-change: contents;
 }
 
 .history-container.slideLeft {
@@ -221,6 +222,23 @@
 
 .history-container.slideRight {
   animation: slideRight 0.18s ease-in-out;
+}
+
+/* 使用网格布局实现自动填补空间 */
+.history-container > *:not(.history-actions):not(.deleting) {
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+/* 设置删除项的动画和位置调整 */
+.history-item.deleting {
+  animation: itemDeleting 0.25s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  pointer-events: none;
+  border-color: var(--focus-color);
+  background-color: var(--history-item-hover-bg);
+  box-shadow: 0 0 15px var(--focus-shadow);
+  overflow: hidden;
+  will-change: transform, opacity, max-height, padding, margin;
+  z-index: 1;
 }
 
 .history-actions {
@@ -370,6 +388,7 @@
   padding: 0;
   line-height: 1;
   z-index: 2;
+  overflow: hidden;
 }
 
 .history-item:hover .edit-button,
@@ -397,6 +416,131 @@
   right: 10px;
 }
 
+/* 添加删除按钮出现动画 */
+.history-item:hover .delete-button {
+  animation: buttonAppear 0.2s ease-out;
+}
+
+/* 删除按钮的点击动画 */
+.delete-button::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: var(--focus-color);
+  border-radius: 50%;
+  transform: scale(0);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.delete-button:active::before {
+  transform: scale(1.2);
+  opacity: 0.3;
+  animation: ripple 0.5s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes buttonAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+  }
+  100% {
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+/* 删除条目背景动画效果 */
+.history-item.deleting::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--focus-color);
+  opacity: 0.1;
+  z-index: -1;
+  animation: deleteFlash 0.25s ease-out forwards;
+}
+
+@keyframes deleteFlash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.15;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes itemDeleting {
+  /* 第一阶段：向左滑出，保持原尺寸 */
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  10% {
+    opacity: 1;
+    transform: translateX(10px) scale(1.01);
+  }
+  20% {
+    opacity: 0.95;
+    transform: translateX(-10px);
+  }
+  40% {
+    opacity: 0.6;
+    transform: translateX(-70px) scale(0.98);
+  }
+  60% {
+    opacity: 0;
+    transform: translateX(-110%);
+  }
+  /* 第二阶段：条目已滑出，开始收缩高度 */
+  60.1% {
+    opacity: 0;
+    transform: translateX(-110%);
+    max-height: 500px;
+    margin-bottom: 12px;
+    padding: 16px;
+    border-width: 1px;
+  }
+  80% {
+    opacity: 0;
+    transform: translateX(-110%);
+    max-height: 50px;
+    margin-bottom: 4px;
+    padding: 4px 16px;
+    border-width: 1px;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-110%);
+    max-height: 0;
+    margin-bottom: 0;
+    padding: 0;
+    border-width: 0;
+  }
+}
+
+/* 历史记录项基本样式 */
 .history-item {
   display: flex;
   flex-direction: column;
@@ -409,6 +553,7 @@
   background-color: var(--history-item-bg);
   position: relative;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  will-change: transform, opacity, max-height, margin, padding;
 }
 
 .history-item:not(.editing):hover {
@@ -1052,4 +1197,3 @@
     opacity: 1;
   }
 }
-
