@@ -111,22 +111,10 @@ export function highlightJson(json) {
 		json
 			// 替换键和冒号
 			.replace(
-				/"([^"]+)":/g,
+				/"([^"]+[^\\])":/g,
 				'<span class="json-key">"$1"</span><span class="json-colon">:</span>'
 			)
 			// 替换字符串值
 			.replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>')
-			// 替换数字值
-			.replace(/: ([0-9]+)([,}\n])/g, ': <span class="json-number">$1</span>$2')
-			// 替换布尔值和null
-			.replace(
-				/: (true|false|null)([,}\n])/g,
-				': <span class="json-boolean">$1</span>$2'
-			)
-			// 替换括号
-			.replace(/[{]/g, '<span class="json-bracket">{</span>')
-			.replace(/[}]/g, '<span class="json-bracket">}</span>')
-			.replace(/\[/g, '<span class="json-bracket">[</span>')
-			.replace(/\]/g, '<span class="json-bracket">]</span>')
 	);
 } 

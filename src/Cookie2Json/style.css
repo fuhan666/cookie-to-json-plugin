@@ -49,9 +49,6 @@
   /* JSON语法高亮颜色 */
   --json-key-color: #b44aef;
   --json-string-color: #2196f3;
-  --json-number-color: #f44336;
-  --json-boolean-color: #ff9800;
-  --json-bracket-color: #795548;
   --json-colon-color: #607d8b;
   --json-error-color: #f44336;
   --history-item-bg: #f8f2ff;
@@ -78,9 +75,6 @@
   /* JSON语法高亮颜色 - 暗色主题 */
   --json-key-color: #bb86fc;
   --json-string-color: #64b5f6;
-  --json-number-color: #ff8a80;
-  --json-boolean-color: #ffb74d;
-  --json-bracket-color: #bcaaa4;
   --json-colon-color: #b0bec5;
   --json-error-color: #ff8a80;
   --history-item-bg: #3d3544;
@@ -570,19 +564,6 @@
 
 .json-string {
   color: var(--json-string-color);
-}
-
-.json-number {
-  color: var(--json-number-color);
-}
-
-.json-boolean {
-  color: var(--json-boolean-color);
-  font-weight: bold;
-}
-
-.json-bracket {
-  color: var(--json-bracket-color);
 }
 
 .json-colon {
