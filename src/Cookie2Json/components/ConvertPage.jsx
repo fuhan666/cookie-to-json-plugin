@@ -37,7 +37,7 @@ export default function ConvertPage({
     setCookieString("");
     setJsonResult("");
     setHighlightedJson("");
-    setLastInputContent(""); // 清空时也更新lastInputContent
+    setLastInputContent("");
     if (inputRef.current) {
       inputRef.current.innerText = "";
     }

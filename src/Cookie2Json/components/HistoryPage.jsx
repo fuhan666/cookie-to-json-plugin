@@ -116,7 +116,6 @@ export default function HistoryPage({
         const editingItemElement =
           nameInputRef.current.closest(".history-item");
         if (editingItemElement) {
-          // 添加动画开始类
           editingItemElement.classList.add("editing-start");
 
           // 获取编辑项的位置信息
@@ -168,7 +167,7 @@ export default function HistoryPage({
 
     const doc = {
       _id: docId,
-      _rev: currentDoc._rev, // 添加 _rev 字段
+      _rev: currentDoc._rev,
       data: {
         content: editContent,
         timestamp: item.timestamp,
@@ -257,7 +256,6 @@ export default function HistoryPage({
     // 获取点击的记录项元素
     const historyItem = deleteButton.closest(".history-item");
     if (historyItem) {
-      // 添加删除动画类，使用CSS控制动画
       historyItem.classList.add("deleting");
 
       // 等待动画完成后再删除
@@ -265,13 +263,11 @@ export default function HistoryPage({
         const docId = `cookie2json/${item.id}`;
         const result = window.utools.db.remove(docId);
 
-        if (result.ok) {
-          // 删除成功后，通过状态更新触发React重新渲染
+        if (result?.ok) {
           const newHistory = history.filter((h) => h.id !== item.id);
           setHistory(newHistory);
           showToastMessage("删除成功");
         } else {
-          // 如果删除失败，移除动画类
           historyItem.classList.remove("deleting");
           showToastMessage("删除失败：" + (result?.message || "未知错误"));
         }
