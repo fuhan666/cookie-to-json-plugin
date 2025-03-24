@@ -8,37 +8,132 @@ export default function HistoryPage({
   loadFromHistory,
   showToastMessage,
   animationDirection,
+  editingItem,
+  setEditingItem,
+  editName,
+  setEditName,
+  editContent,
+  setEditContent,
+  historyScrollPosition,
+  setHistoryScrollPosition,
 }) {
-  const [editingItem, setEditingItem] = useState(null);
-  const [editName, setEditName] = useState("");
-  const [editContent, setEditContent] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
   const nameInputRef = useRef(null);
   const historyContainerRef = useRef(null);
+  // 添加一个标记，避免滚动状态循环更新
+  const isManualScrolling = useRef(false);
 
-  // 监听滚动事件
+  // 监听滚动事件并保存滚动位置
   useEffect(() => {
     const container = historyContainerRef.current;
     if (!container) return;
 
+    // 恢复保存的滚动位置，但只在初次渲染时
+    if (historyScrollPosition > 0 && !isManualScrolling.current) {
+      container.scrollTop = historyScrollPosition;
+    }
+
     const handleScroll = () => {
       // 当滚动位置大于100px时显示按钮，否则隐藏
       setShowScrollTop(container.scrollTop > 100);
+
+      // 只有当不是手动滚动时才更新滚动位置状态
+      if (!isManualScrolling.current) {
+        setHistoryScrollPosition(container.scrollTop);
+      }
     };
 
     container.addEventListener("scroll", handleScroll);
     return () => {
       container.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [historyScrollPosition, setHistoryScrollPosition]);
+
+  // 如果正在编辑项目，确保编辑项在视图中
+  useEffect(() => {
+    if (!editingItem || !historyContainerRef.current) return;
+
+    // 找到要编辑的项
+    const container = historyContainerRef.current;
+    setTimeout(() => {
+      const editingItemElement = document.querySelector(
+        `.history-item[data-id="${editingItem.id}"]`
+      );
+
+      if (editingItemElement && container) {
+        // 获取编辑项的位置信息
+        const rect = editingItemElement.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+
+        // 计算需要的额外空间
+        const padding = 20;
+
+        // 如果编辑项顶部不可见或太靠近顶部，向上滚动
+        if (rect.top < containerRect.top + padding) {
+          isManualScrolling.current = true;
+          const scrollOffset =
+            container.scrollTop + (rect.top - containerRect.top - padding);
+          container.scrollTo({
+            top: scrollOffset,
+            behavior: "smooth",
+          });
+
+          // 滚动完成后重新启用状态更新
+          setTimeout(() => {
+            isManualScrolling.current = false;
+            setHistoryScrollPosition(container.scrollTop);
+          }, 300);
+        }
+        // 如果编辑项底部超出可视区域，向下滚动
+        else if (rect.bottom > containerRect.bottom - padding) {
+          isManualScrolling.current = true;
+          const scrollOffset =
+            container.scrollTop +
+            (rect.bottom - containerRect.bottom + padding);
+          container.scrollTo({
+            top: scrollOffset,
+            behavior: "smooth",
+          });
+
+          // 滚动完成后重新启用状态更新
+          setTimeout(() => {
+            isManualScrolling.current = false;
+            setHistoryScrollPosition(container.scrollTop);
+          }, 300);
+        }
+      }
+    }, 100); // 给DOM更新一些时间
+  }, [editingItem]);
 
   // 返回顶部功能
   const scrollToTop = () => {
     if (historyContainerRef.current) {
+      isManualScrolling.current = true; // 设置标记，防止滚动事件处理程序中的状态更新
+
       historyContainerRef.current.scrollTo({
         top: 0,
         behavior: "smooth",
       });
+
+      // 监听滚动完成
+      const checkScrollEnd = () => {
+        if (historyContainerRef.current.scrollTop <= 10) {
+          // 已接近顶部，确保完全滚动到顶部
+          if (historyContainerRef.current.scrollTop !== 0) {
+            historyContainerRef.current.scrollTop = 0;
+          }
+
+          // 重置标记并更新状态
+          isManualScrolling.current = false;
+          setHistoryScrollPosition(0);
+        } else {
+          // 继续检查直到滚动完成
+          setTimeout(checkScrollEnd, 100);
+        }
+      };
+
+      // 开始检查滚动是否完成
+      setTimeout(checkScrollEnd, 100);
     }
   };
 
@@ -78,16 +173,28 @@ export default function HistoryPage({
       setTimeout(() => {
         const editingItemElement = textarea.closest(".history-item");
         if (editingItemElement && containerElement) {
+          isManualScrolling.current = true; // 设置标记，防止滚动事件处理程序中的状态更新
+
           // 获取编辑项的位置信息
           const rect = editingItemElement.getBoundingClientRect();
+          const containerRect = containerElement.getBoundingClientRect();
 
           // 如果编辑项底部超出可视区域，向下滚动
-          if (rect.bottom > window.innerHeight) {
-            const scrollOffset = rect.bottom - window.innerHeight + 20;
+          if (rect.bottom > containerRect.bottom - 20) {
+            const scrollOffset = rect.bottom - containerRect.bottom + 20;
             containerElement.scrollBy({
               top: scrollOffset,
               behavior: "smooth",
             });
+
+            // 滚动完成后更新状态并重置标记
+            setTimeout(() => {
+              isManualScrolling.current = false;
+              setHistoryScrollPosition(containerElement.scrollTop);
+            }, 300);
+          } else {
+            // 如果不需要滚动，直接重置标记
+            isManualScrolling.current = false;
           }
         }
       }, 80); // 与过渡动画时间匹配
@@ -122,27 +229,40 @@ export default function HistoryPage({
           const rect = editingItemElement.getBoundingClientRect();
           const containerElement =
             editingItemElement.closest(".history-container");
+          const containerRect = containerElement.getBoundingClientRect();
+
+          // 设置标记，防止滚动事件处理程序中的状态更新
+          isManualScrolling.current = true;
 
           // 计算需要的额外空间
-          const topPadding = 60; // 增加顶部空间
-          const bottomPadding = 20;
+          const padding = 20;
 
           // 如果编辑项顶部不可见或太靠近顶部，向上滚动
-          if (rect.top < topPadding) {
-            containerElement.scrollBy({
-              top: rect.top - topPadding,
-              behavior: "smooth",
-            });
-          }
-          // 如果编辑项底部超出可视区域，向下滚动
-          else if (rect.bottom > window.innerHeight) {
+          if (rect.top < containerRect.top + padding) {
             const scrollOffset =
-              rect.bottom - window.innerHeight + bottomPadding;
-            containerElement.scrollBy({
+              containerElement.scrollTop +
+              (rect.top - containerRect.top - padding);
+            containerElement.scrollTo({
               top: scrollOffset,
               behavior: "smooth",
             });
           }
+          // 如果编辑项底部超出可视区域，向下滚动
+          else if (rect.bottom > containerRect.bottom - padding) {
+            const scrollOffset =
+              containerElement.scrollTop +
+              (rect.bottom - containerRect.bottom + padding);
+            containerElement.scrollTo({
+              top: scrollOffset,
+              behavior: "smooth",
+            });
+          }
+
+          // 滚动完成后，更新状态并重置标记
+          setTimeout(() => {
+            isManualScrolling.current = false;
+            setHistoryScrollPosition(containerElement.scrollTop);
+          }, 300);
         }
       }
     }, 0);

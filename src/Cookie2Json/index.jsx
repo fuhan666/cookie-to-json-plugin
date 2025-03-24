@@ -19,6 +19,12 @@ export default function Cookie2Json({ enterAction }) {
   const [lastInputContent, setLastInputContent] = useState(""); // 添加新的状态来保存最后的输入内容
   const [selectedItems, setSelectedItems] = useState(new Set()); // 添加选中项的状态
   const [animationDirection, setAnimationDirection] = useState("fadeIn"); // 'fadeIn', 'slideLeft', 'slideRight'
+  // 记录编辑历史记录状态
+  const [editingItem, setEditingItem] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editContent, setEditContent] = useState("");
+
+  const [historyScrollPosition, setHistoryScrollPosition] = useState(0); // 记录历史记录页面滚动位置
 
   // 初始化时从数据库加载历史记录
   useEffect(() => {
@@ -149,7 +155,7 @@ export default function Cookie2Json({ enterAction }) {
             if (activeTab !== "convert") {
               setAnimationDirection("slideRight"); // 从历史记录切换到转换页面
               setActiveTab("convert");
-              setSelectedItems(new Set()); // 清空选中状态
+              setSelectedItems(new Set());
             }
           }}
         >
@@ -194,6 +200,14 @@ export default function Cookie2Json({ enterAction }) {
           loadFromHistory={loadFromHistory}
           showToastMessage={showToastMessage}
           animationDirection={animationDirection}
+          editingItem={editingItem}
+          setEditingItem={setEditingItem}
+          editName={editName}
+          setEditName={setEditName}
+          editContent={editContent}
+          setEditContent={setEditContent}
+          historyScrollPosition={historyScrollPosition}
+          setHistoryScrollPosition={setHistoryScrollPosition}
         />
       )}
     </div>
