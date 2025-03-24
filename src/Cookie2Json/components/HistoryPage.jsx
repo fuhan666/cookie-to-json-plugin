@@ -372,7 +372,7 @@ export default function HistoryPage({
                 ) {
                   return;
                 }
-                loadFromHistory(item, e);
+                loadFromHistory(item);
               }}
             >
               <div

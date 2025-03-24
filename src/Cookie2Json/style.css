@@ -1150,13 +1150,6 @@
   margin-top: 0;
 }
 
-/* 历史记录项点击效果 */
-.history-item.clicked {
-  transform: scale(0.98);
-  opacity: 0.8;
-  transition: transform 0.05s ease-out, opacity 0.05s ease-out;
-}
-
 @keyframes fadeIn {
   from {
     opacity: 0;

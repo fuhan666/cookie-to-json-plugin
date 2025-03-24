@@ -113,26 +113,11 @@ export default function Cookie2Json({ enterAction }) {
   };
 
   // 从历史记录中加载
-  const loadFromHistory = (item, event) => {
-    // 如果存在事件和目标元素，添加点击动画效果
-    if (event && event.currentTarget) {
-      const historyItem = event.currentTarget;
-      historyItem.classList.add("clicked");
-
-      // 添加短暂延迟以便动画效果可见
-      setTimeout(() => {
-        setAnimationDirection("slideRight"); // 从历史记录切换到转换页面
-        setActiveTab("convert");
-        setLastInputContent(item.content);
-        handleInputChange({ target: { innerText: item.content } });
-      }, 50);
-    } else {
-      // 没有事件对象时，直接切换
-      setAnimationDirection("slideRight"); // 从历史记录切换到转换页面
-      setActiveTab("convert");
-      setLastInputContent(item.content);
-      handleInputChange({ target: { innerText: item.content } });
-    }
+  const loadFromHistory = (item) => {
+    setAnimationDirection("slideRight");
+    setActiveTab("convert");
+    setLastInputContent(item.content);
+    handleInputChange({ target: { innerText: item.content } });
   };
 
   // 处理输入框内容变化
