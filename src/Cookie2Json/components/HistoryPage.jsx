@@ -177,7 +177,7 @@ export default function HistoryPage({
     };
 
     const result = window.utools.db.put(doc);
-    if (result.ok) {
+    if (result?.ok) {
       const newHistory = history.map((h) => {
         if (h.id === item.id) {
           return {
@@ -192,7 +192,7 @@ export default function HistoryPage({
       showToastMessage("修改成功");
       cancelEdit();
     } else {
-      showToastMessage("修改失败：" + (result.message || "未知错误"));
+      showToastMessage("修改失败：" + (result?.message || "未知错误"));
     }
   };
 
@@ -224,7 +224,7 @@ export default function HistoryPage({
         return window.utools.db.remove(docId);
       });
 
-      const successCount = results.filter((result) => result.ok).length;
+      const successCount = results.filter((result) => result?.ok).length;
       const failCount = results.length - successCount;
 
       if (successCount > 0) {
@@ -273,19 +273,19 @@ export default function HistoryPage({
         } else {
           // 如果删除失败，移除动画类
           historyItem.classList.remove("deleting");
-          showToastMessage("删除失败：" + (result.message || "未知错误"));
+          showToastMessage("删除失败：" + (result?.message || "未知错误"));
         }
       }, 250);
     } else {
       // 如果没有找到元素，直接删除
       const docId = `cookie2json/${item.id}`;
       const result = window.utools.db.remove(docId);
-      if (result.ok) {
+      if (result?.ok) {
         const newHistory = history.filter((h) => h.id !== item.id);
         setHistory(newHistory);
         showToastMessage("删除成功");
       } else {
-        showToastMessage("删除失败：" + (result.message || "未知错误"));
+        showToastMessage("删除失败：" + (result?.message || "未知错误"));
       }
     }
   };

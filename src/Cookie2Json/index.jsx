@@ -83,7 +83,7 @@ export default function Cookie2Json({ enterAction }) {
     };
 
     const result = window.utools.db.put(doc);
-    if (result.ok) {
+    if (result?.ok) {
       const newHistory = [
         {
           id: timestamp,
@@ -108,7 +108,7 @@ export default function Cookie2Json({ enterAction }) {
       setHistory(newHistory);
       showToastMessage("已保存到历史记录");
     } else {
-      showToastMessage("保存失败：" + (result.message || "未知错误"));
+      showToastMessage("保存失败：" + (result?.message || "未知错误"));
     }
   };
 
