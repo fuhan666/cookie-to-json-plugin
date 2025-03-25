@@ -16,12 +16,81 @@ export default function HistoryPage({
   setEditContent,
   historyScrollPosition,
   setHistoryScrollPosition,
+  searchKeyword,
+  setSearchKeyword,
+  handleSearchInput,
 }) {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const nameInputRef = useRef(null);
   const historyContainerRef = useRef(null);
   // 添加一个标记，避免滚动状态循环更新
   const isManualScrolling = useRef(false);
+  // 添加标记，记录是否已经初始化过子输入框
+  const hasInitializedSubInput = useRef(false);
+
+  // 设置子输入框
+  useEffect(() => {
+    if (editingItem) {
+      // 编辑模式下不显示子输入框
+      window.utools.subInputBlur();
+      window.utools.removeSubInput();
+      return () => {
+        // 确保在编辑模式下不会意外显示子输入框
+        if (animationDirection !== "slideRight") {
+          // 只有在非编辑状态下，才恢复子输入框
+          if (searchKeyword) {
+            window.utools.setSubInput(
+              handleSearchInput,
+              "搜索历史记录...",
+              false
+            );
+            window.utools.setSubInputValue(searchKeyword);
+            setTimeout(() => {
+              window.utools.subInputFocus();
+            }, 100);
+          } else {
+            window.utools.removeSubInput();
+          }
+        }
+      };
+    } else {
+      window.utools.setSubInput(handleSearchInput, "搜索历史记录...", false);
+
+      // 设置初始值
+      if (searchKeyword) {
+        window.utools.setSubInputValue(searchKeyword);
+      }
+
+      // 尝试聚焦子输入框，但仅在动画方向为 slideLeft 时（即从转换页面切换过来时）
+      if (
+        animationDirection === "slideLeft" &&
+        !hasInitializedSubInput.current
+      ) {
+        // 延迟一点聚焦，等动画完成
+        setTimeout(() => {
+          window.utools.subInputFocus();
+          hasInitializedSubInput.current = true;
+        }, 200);
+      }
+    }
+
+    // 页面卸载时清除子输入框
+    return () => {
+      // 如果是切换到转换页面，在index.jsx中处理子输入框的移除
+      if (animationDirection !== "slideRight") {
+        window.utools.removeSubInput();
+      }
+    };
+  }, [editingItem, searchKeyword, animationDirection, handleSearchInput]);
+
+  // 当从编辑状态返回非编辑状态时，重新聚焦子输入框
+  useEffect(() => {
+    if (!editingItem && hasInitializedSubInput.current) {
+      setTimeout(() => {
+        window.utools.subInputFocus();
+      }, 100);
+    }
+  }, [editingItem]);
 
   // 监听滚动事件并保存滚动位置
   useEffect(() => {
@@ -104,6 +173,20 @@ export default function HistoryPage({
       }
     }, 100); // 给DOM更新一些时间
   }, [editingItem]);
+
+  // 监听搜索关键字变化
+  useEffect(() => {
+    // 当搜索关键字被清空但不是通过清除搜索按钮时，也需要重新聚焦
+    if (
+      searchKeyword === "" &&
+      !editingItem &&
+      hasInitializedSubInput.current
+    ) {
+      setTimeout(() => {
+        window.utools.subInputFocus();
+      }, 50);
+    }
+  }, [searchKeyword, history, editingItem]);
 
   // 返回顶部功能
   const scrollToTop = () => {
@@ -273,6 +356,17 @@ export default function HistoryPage({
     setEditingItem(null);
     setEditName("");
     setEditContent("");
+
+    // 恢复搜索框状态
+    if (searchKeyword && animationDirection !== "slideRight") {
+      setTimeout(() => {
+        window.utools.setSubInput(handleSearchInput, "搜索历史记录...", false);
+        window.utools.setSubInputValue(searchKeyword);
+        setTimeout(() => {
+          window.utools.subInputFocus();
+        }, 50);
+      }, 0);
+    }
   };
 
   // 保存编辑
@@ -309,10 +403,56 @@ export default function HistoryPage({
       });
       setHistory(newHistory);
       showToastMessage("修改成功");
+
+      // 保存当前搜索关键字
+      const currentSearchKeyword = searchKeyword;
+
+      // 退出编辑模式
       cancelEdit();
+
+      // 如果有搜索关键字并且不是在向转换页面切换，确保搜索框状态正确恢复
+      if (currentSearchKeyword && animationDirection !== "slideRight") {
+        setTimeout(() => {
+          window.utools.setSubInput(
+            handleSearchInput,
+            "搜索历史记录...",
+            false
+          );
+          window.utools.setSubInputValue(currentSearchKeyword);
+          setTimeout(() => {
+            window.utools.subInputFocus();
+          }, 50);
+        }, 0);
+      }
     } else {
       showToastMessage("修改失败：" + (result?.message || "未知错误"));
     }
+  };
+
+  // 清除搜索
+  const clearSearch = () => {
+    setSearchKeyword("");
+    window.utools.setSubInputValue("");
+
+    // 添加对父组件的History状态的引用
+    const allHistory = window.utools.db.allDocs("cookie2json/") || [];
+    const historyData = allHistory
+      .map((doc) => ({
+        id: doc._id.replace("cookie2json/", ""),
+        content: doc.data.content,
+        timestamp: doc.data.timestamp,
+        name: doc.data.name,
+      }))
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 1000);
+
+    // 更新父组件中的history状态
+    setHistory(historyData);
+
+    // 确保清除搜索后重新聚焦到子输入框
+    setTimeout(() => {
+      window.utools.subInputFocus();
+    }, 50);
   };
 
   // 全选功能
@@ -351,11 +491,19 @@ export default function HistoryPage({
         const newHistory = history.filter((h) => !selectedItems.has(h.id));
         setHistory(newHistory);
         setSelectedItems(new Set());
-        showToastMessage(
-          `成功删除${successCount}条记录${
-            failCount > 0 ? `，${failCount}条删除失败` : ""
-          }`
-        );
+
+        // 检查是否删除了所有搜索结果
+        if (searchKeyword && newHistory.length === 0) {
+          // 如果删除了所有搜索结果，自动清除搜索关键字
+          clearSearch();
+          showToastMessage(`成功删除${successCount}条记录，已清除搜索条件`);
+        } else {
+          showToastMessage(
+            `成功删除${successCount}条记录${
+              failCount > 0 ? `，${failCount}条删除失败` : ""
+            }`
+          );
+        }
       } else {
         // 删除失败，移除动画类
         document.querySelectorAll(".history-item.deleting").forEach((item) => {
@@ -386,6 +534,11 @@ export default function HistoryPage({
         if (result?.ok) {
           const newHistory = history.filter((h) => h.id !== item.id);
           setHistory(newHistory);
+
+          // 检查是否删除了最后一条搜索结果
+          if (searchKeyword && newHistory.length === 0) {
+            clearSearch();
+          }
           showToastMessage("删除成功");
         } else {
           historyItem.classList.remove("deleting");
@@ -399,7 +552,15 @@ export default function HistoryPage({
       if (result?.ok) {
         const newHistory = history.filter((h) => h.id !== item.id);
         setHistory(newHistory);
-        showToastMessage("删除成功");
+
+        // 检查是否删除了最后一条搜索结果
+        if (searchKeyword && newHistory.length === 0) {
+          // 如果删除了最后一条搜索结果，自动清除搜索关键字
+          clearSearch();
+          showToastMessage("删除成功，已清除搜索条件");
+        } else {
+          showToastMessage("删除成功");
+        }
       } else {
         showToastMessage("删除失败：" + (result?.message || "未知错误"));
       }
@@ -420,7 +581,7 @@ export default function HistoryPage({
 
   return (
     <>
-      {history.length > 0 && !editingItem && (
+      {!editingItem && (
         <div className="history-actions">
           <div className="history-actions-left">
             {showScrollTop && (
@@ -432,28 +593,43 @@ export default function HistoryPage({
                 <span>返回顶部</span>
               </button>
             )}
+            {history.length > 0 && (
+              <>
+                <button
+                  className="select-all-button"
+                  onClick={selectAll}
+                  disabled={history.length === 0}
+                >
+                  <span>全选</span>
+                </button>
+                <button
+                  className="deselect-all-button"
+                  onClick={deselectAll}
+                  disabled={selectedItems.size === 0}
+                >
+                  <span>取消选择</span>
+                </button>
+              </>
+            )}
+            {searchKeyword && (
+              <button
+                className="clear-search-button"
+                onClick={clearSearch}
+                title="清除搜索"
+              >
+                <span>清除搜索</span>
+              </button>
+            )}
+          </div>
+          {history.length > 0 && (
             <button
-              className="select-all-button"
-              onClick={selectAll}
-              disabled={history.length === 0}
-            >
-              <span>全选</span>
-            </button>
-            <button
-              className="deselect-all-button"
-              onClick={deselectAll}
+              className="batch-delete-button"
+              onClick={deleteSelectedHistory}
               disabled={selectedItems.size === 0}
             >
-              <span>取消选择</span>
+              <span>删除选中({selectedItems.size})</span>
             </button>
-          </div>
-          <button
-            className="batch-delete-button"
-            onClick={deleteSelectedHistory}
-            disabled={selectedItems.size === 0}
-          >
-            <span>删除选中({selectedItems.size})</span>
-          </button>
+          )}
         </div>
       )}
 
@@ -469,7 +645,7 @@ export default function HistoryPage({
               color: "var(--text-color)",
             }}
           >
-            暂无历史记录
+            {searchKeyword ? "未找到匹配的历史记录" : "暂无历史记录"}
           </div>
         ) : (
           history.map((item) => (

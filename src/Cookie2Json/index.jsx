@@ -25,6 +25,9 @@ export default function Cookie2Json({ enterAction }) {
   const [editContent, setEditContent] = useState("");
 
   const [historyScrollPosition, setHistoryScrollPosition] = useState(0); // 记录历史记录页面滚动位置
+  // 搜索相关状态
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [filteredHistory, setFilteredHistory] = useState([]);
 
   // 初始化时从数据库加载历史记录
   useEffect(() => {
@@ -39,7 +42,12 @@ export default function Cookie2Json({ enterAction }) {
       .sort((a, b) => b.timestamp - a.timestamp)
       .slice(0, 1000); // 只保留最近1000条记录
     setHistory(historyData);
-  }, []);
+    setFilteredHistory(historyData); // 初始化过滤后的历史记录
+
+    if (activeTab === "convert") {
+      window.utools.removeSubInput();
+    }
+  }, [activeTab]);
 
   // 监听系统主题变化
   useEffect(() => {
@@ -66,6 +74,35 @@ export default function Cookie2Json({ enterAction }) {
       mediaQuery.removeEventListener("change", handleThemeChange);
     };
   }, []);
+
+  // 处理搜索关键字变化，过滤历史记录
+  useEffect(() => {
+    if (searchKeyword.trim() === "") {
+      setFilteredHistory(history);
+      return;
+    }
+
+    const keyword = searchKeyword.toLowerCase();
+    const filtered = history.filter((item) => {
+      return (
+        (item.content && item.content.toLowerCase().includes(keyword)) ||
+        (item.name && item.name.toLowerCase().includes(keyword))
+      );
+    });
+
+    setFilteredHistory(filtered);
+  }, [searchKeyword, history]);
+
+  // 处理搜索输入变化
+  const handleSearchInput = ({ text }) => {
+    setSearchKeyword(text);
+    // 确保搜索框在删除文字后保持聚焦
+    if (activeTab === "history" && text === "") {
+      setTimeout(() => {
+        window.utools.subInputFocus();
+      }, 10);
+    }
+  };
 
   // 显示Toast消息
   const showToastMessage = (message) => {
@@ -112,6 +149,7 @@ export default function Cookie2Json({ enterAction }) {
       }
 
       setHistory(newHistory);
+      setFilteredHistory(newHistory); // 更新过滤后的历史记录
       showToastMessage("已保存到历史记录");
     } else {
       showToastMessage("保存失败：" + (result?.message || "未知错误"));
@@ -124,6 +162,7 @@ export default function Cookie2Json({ enterAction }) {
     setActiveTab("convert");
     setLastInputContent(item.content);
     handleInputChange({ target: { innerText: item.content } });
+    window.utools.removeSubInput();
   };
 
   // 处理输入框内容变化
@@ -156,6 +195,7 @@ export default function Cookie2Json({ enterAction }) {
               setAnimationDirection("slideRight"); // 从历史记录切换到转换页面
               setActiveTab("convert");
               setSelectedItems(new Set());
+              window.utools.removeSubInput();
             }
           }}
         >
@@ -193,7 +233,7 @@ export default function Cookie2Json({ enterAction }) {
 
       {activeTab === "history" && (
         <HistoryPage
-          history={history}
+          history={filteredHistory}
           setHistory={setHistory}
           selectedItems={selectedItems}
           setSelectedItems={setSelectedItems}
@@ -208,6 +248,9 @@ export default function Cookie2Json({ enterAction }) {
           setEditContent={setEditContent}
           historyScrollPosition={historyScrollPosition}
           setHistoryScrollPosition={setHistoryScrollPosition}
+          searchKeyword={searchKeyword}
+          setSearchKeyword={setSearchKeyword}
+          handleSearchInput={handleSearchInput}
         />
       )}
     </div>
