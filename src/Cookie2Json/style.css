@@ -1076,7 +1076,7 @@
   animation: inputFadeIn 0.12s ease forwards;
   animation-delay: 0.05s;
   width: 100%;
-  min-height: 60px;
+  min-height: 84px;
   max-height: 50vh;
   padding: 8px 10px;
   border: 1px solid var(--border-color);
