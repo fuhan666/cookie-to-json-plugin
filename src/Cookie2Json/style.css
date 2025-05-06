@@ -1,7 +1,7 @@
 /* 字体声明 */
 @font-face {
-  font-family: 'SourceCodePro';
-  src: url('/fonts/SourceCodeVF-Upright.otf.woff2') format('woff2');
+  font-family: 'JetBrainsMono';
+  src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -698,7 +698,7 @@
 }
 
 .history-item-content {
-  font-family: 'SourceCodePro', monospace;
+  font-family: 'JetBrainsMono', monospace;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -754,7 +754,7 @@
   border: 1px solid var(--border-color);
   border-radius: 4px;
   resize: none;
-  font-family: 'SourceCodePro', monospace;
+  font-family: 'JetBrainsMono', monospace;
   font-size: 14px;
   word-wrap: break-word;
   white-space: pre-wrap;
@@ -787,7 +787,7 @@
   border-radius: 4px;
   overflow: auto;
   margin: 0;
-  font-family: 'SourceCodePro', monospace;
+  font-family: 'JetBrainsMono', monospace;
   font-size: 14px;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -1083,7 +1083,7 @@
   border-radius: 4px;
   background-color: var(--container-bg);
   color: var(--text-color);
-  font-family: 'SourceCodePro', monospace;
+  font-family: 'JetBrainsMono', monospace;
   font-size: 13px;
   resize: vertical;
   overflow-y: auto;
