@@ -6,12 +6,21 @@
   },
   "features": [
     {
-      "code": "cookie2json",
-      "explain": "Cookie字符串转JSON格式",
+      "code": "convert",
+      "explain": "Cookie to JSON",
       "cmds": [
-        "cookie转json",
-        "cookie2json",
-        "Cookie转JSON"
+        "convert",
+        "Cookie",
+        {
+          "type": "regex", 
+          "label": "Cookie转JSON",
+          "match": "/^[^=;\\s]+=[^;]+(?:;\\s*[^=;\\s]+=[^;]+)*(?:;\\s*)?$/"
+        },
+        {
+          "type": "regex", 
+          "label": "Cookie转JSON",
+          "match": "/^(?=[\\s\\S]*curl)(?=[\\s\\S]*[Cc]ookie)[\\s\\S]*$/"
+        }
       ]
     }
   ]
