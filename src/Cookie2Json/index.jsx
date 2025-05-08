@@ -29,6 +29,29 @@ export default function Cookie2Json({ enterAction }) {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [filteredHistory, setFilteredHistory] = useState([]);
 
+  // 处理通过正则匹配进入插件时的自动填充
+  useEffect(() => {
+    if (enterAction && enterAction.type === "regex" && enterAction.payload) {
+      const inputText = enterAction.payload;
+
+      try {
+        let cookieStr = extractCookieString(inputText);
+        const result = cookieStringToJson(cookieStr);
+        const formattedJson = JSON.stringify(result, null, 2);
+
+        // 更新所有状态，但标记为非用户输入引起的变化
+        setCookieString(inputText);
+        setLastInputContent(inputText);
+        setJsonResult(formattedJson);
+        setHighlightedJson(highlightJson(formattedJson));
+      } catch (error) {
+        const errorMessage = "转换出错：" + error.message;
+        setJsonResult(errorMessage);
+        setHighlightedJson(highlightJson(errorMessage));
+      }
+    }
+  }, [enterAction]);
+
   // 初始化时从数据库加载历史记录
   useEffect(() => {
     const allDocs = window.utools.db.allDocs("cookie2json/") || [];

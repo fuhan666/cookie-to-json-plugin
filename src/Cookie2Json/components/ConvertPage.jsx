@@ -17,13 +17,24 @@ export default function ConvertPage({
 }) {
   const inputRef = useRef(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [isUserTyping, setIsUserTyping] = useState(false);
 
-  // 监听 lastInputContent 变化，更新输入框内容
+  // 监听 lastInputContent 变化，但只在非用户输入时更新输入框内容
   useEffect(() => {
-    if (inputRef.current && lastInputContent !== inputRef.current.innerText) {
+    if (
+      inputRef.current &&
+      !isUserTyping &&
+      lastInputContent !== inputRef.current.innerText
+    ) {
       inputRef.current.innerText = lastInputContent;
     }
-  }, [lastInputContent]);
+  }, [lastInputContent, isUserTyping]);
+
+  useEffect(() => {
+    if (inputRef.current && lastInputContent) {
+      inputRef.current.innerText = lastInputContent;
+    }
+  }, []);
 
   // 复制JSON到剪贴板
   const copyToClipboard = () => {
@@ -46,11 +57,20 @@ export default function ConvertPage({
   // 处理粘贴事件
   const handlePaste = (e) => {
     e.preventDefault();
+    setIsUserTyping(true);
     const text = e.clipboardData.getData("text/plain");
     document.execCommand("insertText", false, text);
     if (inputRef.current) {
       handleInputChange({ target: inputRef.current });
     }
+    setTimeout(() => setIsUserTyping(false), 0);
+  };
+
+  // 处理用户输入
+  const handleUserInput = (e) => {
+    setIsUserTyping(true);
+    handleInputChange({ target: e.target });
+    setTimeout(() => setIsUserTyping(false), 0);
   };
 
   const handleSave = () => {
@@ -76,7 +96,7 @@ export default function ConvertPage({
           ref={inputRef}
           className="cookie-input"
           contentEditable
-          onInput={(e) => handleInputChange({ target: e.target })}
+          onInput={handleUserInput}
           onPaste={handlePaste}
           suppressContentEditableWarning={true}
           placeholder="请输入Cookie字符串，例如：name=value; name2=value2"
