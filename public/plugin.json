@@ -9,8 +9,7 @@
       "code": "convert",
       "explain": "Cookie to JSON",
       "cmds": [
-        "convert",
-        "Cookie",
+        "Cookie2JSON",
         {
           "type": "regex", 
           "label": "Cookie转JSON",
@@ -18,7 +17,7 @@
         },
         {
           "type": "regex", 
-          "label": "Cookie转JSON",
+          "label": "curl Cookie转JSON",
           "match": "/^(?=[\\s\\S]*curl)(?=[\\s\\S]*([Cc]ookie|-b))[\\s\\S]*$/"
         }
       ]
