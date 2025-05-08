@@ -19,7 +19,7 @@
         {
           "type": "regex", 
           "label": "Cookie转JSON",
-          "match": "/^(?=[\\s\\S]*curl)(?=[\\s\\S]*[Cc]ookie)[\\s\\S]*$/"
+          "match": "/^(?=[\\s\\S]*curl)(?=[\\s\\S]*([Cc]ookie|-b))[\\s\\S]*$/"
         }
       ]
     }
