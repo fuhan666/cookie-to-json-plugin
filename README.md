@@ -9,6 +9,12 @@
 - 支持一键复制转换结果
 - 转换历史记录的增、删、改、查
 
+## 安装
+
+已发布到 uTools 插件应用市场，可直接输入“Cookie 转 JSON”搜索插件进行安装。
+
+![插件详情](assets/plugin-detail.png)
+
 ## 许可证
 
 MIT License
